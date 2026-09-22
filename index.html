@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Operativo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
+    .progress-bar { transition: width 0.3s ease; }
+    iframe { border-radius: 0.5rem; }
+    .table-container { max-height: 400px; overflow-y: auto; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-6">
+
+  <div class="flex justify-between items-center mb-6 bg-white p-4 rounded shadow border border-gray-200">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-700">Gestión de Terminales</h1>
+      <p class="text-sm text-gray-500">Alta Densidad (GitHub Pages + API de Google)</p>
+    </div>
+    <button onclick="startDataStream()" id="btnSync" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition" disabled>
+      Conectando...
+    </button>
+  </div>
+
+  <div id="errorPanel" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-6 rounded shadow text-sm">
+    <p class="font-bold">Avisos del Sistema:</p>
+    <div id="errorMessage"></div>
+  </div>
+
+  <div id="progressPanel" class="hidden bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500">
+    <div class="flex justify-between mb-2">
+      <span id="progressText" class="text-sm font-bold text-gray-700">Buscando archivos...</span>
+      <span id="progressCount" class="text-sm text-gray-500">0%</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-2.5">
+      <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div id="mainContainer" class="hidden">
+    <div class="flex mb-4 border-b border-gray-300">
+      <button onclick="switchTab('general')" id="tabGeneral" class="tab-active px-4 py-2 mr-4 transition">Vista General</button>
+      <button onclick="switchTab('individual')" id="tabIndividual" class="text-gray-500 px-4 py-2 transition hover:text-blue-500">Consulta Individual</button>
+    </div>
+
+    <!-- VISTA 1: DASHBOARD GENERAL -->
+    <div id="viewGeneral">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <select id="filterProc" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Procesadora (Todas)</option><option value="Credicard">Credicard</option><option value="Platco">Platco</option></select>
+        <select id="filterStatus" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estatus (Todos)</option><option value="Activated">Activados</option><option value="No Activated">No Activados</option></select>
+        <select id="filterNet" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Red (Todas)</option><option value="WIFI">WIFI</option><option value="4G">4G</option></select>
+        <select id="filterModel" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Modelo (Todos)</option></select>
+        <select id="filterState" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estado (Todos)</option></select>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-3xl font-bold">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Activos</h3><p id="kpiActive" class="text-3xl font-bold text-green-600">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Batería &lt; 20%</h3><p id="kpiBattery" class="text-3xl font-bold text-red-600">0</p></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Conectividad (Red)</h3><div class="w-full h-48"><canvas id="chartNet"></canvas></div></div>
+        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Top 5 Modelos</h3><div class="w-full h-48"><canvas id="chartModelos"></canvas></div></div>
+        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Distribución de Estatus</h3><div class="w-full h-48"><canvas id="chartStatus"></canvas></div></div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="col-span-1 bg-white p-4 rounded shadow table-container">
+          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 sticky top-0 bg-white border-b pb-2">Densidad por Estado</h2>
+          <table class="w-full text-left text-sm mt-2"><tbody id="stateTableBody"></tbody></table>
+        </div>
+        <div class="col-span-2 bg-white p-4 rounded shadow">
+          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2">Mapa Coroplético (Google GeoChart)</h2>
+          <div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 2: CONSULTA INDIVIDUAL -->
+    <div id="viewIndividual" class="hidden">
+      <div class="bg-white p-6 rounded shadow mb-6">
+        <h2 class="text-lg font-bold mb-4">Buscar Terminal</h2>
+        <div class="flex gap-4">
+          <input type="text" id="searchInput" placeholder="Ingrese el Serial (Device SN)..." class="border p-2 rounded w-full md:w-1/2 outline-none">
+          <button onclick="searchTerminal()" class="bg-green-600 text-white px-6 py-2 rounded shadow hover:bg-green-700">Buscar</button>
+        </div>
+        <p id="searchError" class="text-red-500 mt-2 hidden">Terminal no encontrado.</p>
+      </div>
+
+      <div id="terminalCard" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded shadow">
+          <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Información Técnica</h3>
+          <p><strong>Procesadora:</strong> <span id="indProc"></span></p>
+          <p><strong>Comercio:</strong> <span id="indMerchant"></span></p>
+          <p><strong>Modelo:</strong> <span id="indModel"></span></p>
+          <p><strong>Serial (SN):</strong> <span id="indSN"></span></p>
+          <p><strong>Apps Instaladas:</strong> <span id="indApps" class="text-sm text-blue-600"></span></p>
+          <p class="mt-4"><strong>Estatus:</strong> <span id="indStatus"></span></p>
+          <p><strong>Última Conexión:</strong> <span id="indOnline"></span></p>
+          <p><strong>Red:</strong> <span id="indNet"></span></p>
+          <p class="mt-4"><strong>Batería:</strong> <span id="indBat"></span></p>
+          <p><strong>Impresora:</strong> <span id="indPrinter"></span></p>
+          <p><strong>Estado:</strong> <span id="indState"></span></p>
+        </div>
+        <div class="bg-white p-2 rounded shadow flex flex-col h-96">
+          <h3 class="text-lg font-bold text-gray-700 ml-4 mt-2">Ubicación Exacta</h3>
+          <div id="googleMapContainer" class="flex-grow p-2 w-full h-full bg-gray-100 rounded"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // REEMPLAZA ESTA URL CON LA QUE TE GENERÓ GOOGLE APPS SCRIPT
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxw6maKbRQ7dvvgLyG3xbCWn9NuOLbTNjk8JmL_5U11zGfgj3hc8qt2aQXrzn-vtqz-/exec';
+
+    let rawData = [];
+    let chartsLoaded = false;
+    let chartNetInst, chartModInst, chartStatInst;
+
+    const vzlaStates = [
+      { name: "Amazonas", iso: "VE-X", lat: 3.5, lng: -66.0 }, { name: "Anzoátegui", iso: "VE-B", lat: 9.0, lng: -64.3 },
+      { name: "Apure", iso: "VE-C", lat: 7.1, lng: -68.8 }, { name: "Aragua", iso: "VE-D", lat: 10.0, lng: -67.4 },
+      { name: "Barinas", iso: "VE-E", lat: 8.0, lng: -69.8 }, { name: "Bolívar", iso: "VE-F", lat: 6.3, lng: -63.5 },
+      { name: "Carabobo", iso: "VE-G", lat: 10.2, lng: -67.9 }, { name: "Cojedes", iso: "VE-H", lat: 9.3, lng: -68.3 },
+      { name: "Delta Amacuro", iso: "VE-Y", lat: 8.5, lng: -61.5 }, { name: "Falcón", iso: "VE-I", lat: 11.0, lng: -69.6 },
+      { name: "Guárico", iso: "VE-J", lat: 8.8, lng: -66.2 }, { name: "Lara", iso: "VE-K", lat: 10.0, lng: -69.8 },
+      { name: "Mérida", iso: "VE-L", lat: 8.4, lng: -71.1 }, { name: "Miranda", iso: "VE-M", lat: 10.2, lng: -66.4 },
+      { name: "Monagas", iso: "VE-N", lat: 9.4, lng: -63.0 }, { name: "Nueva Esparta", iso: "VE-O", lat: 11.0, lng: -64.0 },
+      { name: "Portuguesa", iso: "VE-P", lat: 9.1, lng: -69.3 }, { name: "Sucre", iso: "VE-R", lat: 10.5, lng: -63.2 },
+      { name: "Táchira", iso: "VE-S", lat: 7.8, lng: -72.0 }, { name: "Trujillo", iso: "VE-T", lat: 9.3, lng: -70.5 },
+      { name: "Vargas", iso: "VE-W", lat: 10.6, lng: -66.9 }, { name: "Yaracuy", iso: "VE-U", lat: 10.3, lng: -68.7 },
+      { name: "Zulia", iso: "VE-V", lat: 9.9, lng: -72.2 }, { name: "Distrito Capital", iso: "VE-A", lat: 10.5, lng: -66.9 }
+    ];
+
+    function getStateInfo(lat, lng) {
+      if(isNaN(lat) || isNaN(lng)) return { name: "Desconocido", iso: null };
+      let minD = Infinity, st = { name: "Desconocido", iso: null };
+      for(let s of vzlaStates) {
+        let d = Math.pow(lat - s.lat, 2) + Math.pow(lng - s.lng, 2);
+        if(d < minD) { minD = d; st = { name: s.name, iso: s.iso }; }
+      }
+      return minD > 15 ? { name: "Fuera de Venezuela", iso: null } : st; 
+    }
+
+    // Esta es la nueva función que se comunica con tu API de Google
+    async function runAsync(fn, id = null, processor = null) {
+      let url = `${API_URL}?action=${fn}`;
+      if (id) url += `&id=${encodeURIComponent(id)}&processor=${encodeURIComponent(processor)}`;
+      
+      let response = await fetch(url);
+      if (!response.ok) throw new Error("Error de conexión con la API de Google");
+      return await response.json();
+    }
+
+    window.onload = function() {
+      document.getElementById('progressPanel').style.display = 'block';
+      google.charts.load('current', { 'packages': ['geochart'] });
+      google.charts.setOnLoadCallback(() => {
+         chartsLoaded = true;
+         startDataStream();
+      });
+    };
+
+    async function startDataStream() {
+      document.getElementById('btnSync').disabled = true;
+      document.getElementById('btnSync').innerText = 'Sincronizando...';
+      document.getElementById('errorPanel').style.display = 'none';
+      document.getElementById('errorMessage').innerHTML = '';
+      document.getElementById('mainContainer').style.display = 'block';
+      
+      rawData = []; 
+      
+      try {
+        let files = await runAsync('getFilesList');
+        if(!files || files.length === 0) return;
+
+        for (let i = 0; i < files.length; i++) {
+          let file = files[i];
+          document.getElementById('progressText').innerText = `Procesando matriz: ${file.name}`;
+          
+          let response = await runAsync('processSingleFile', file.id, file.processor);
+          if(response.success) {
+            response.data.forEach(item => {
+              item.estadoInfo = { name: "Desconocido", iso: null };
+              if(item.loc) {
+                let c = item.loc.replace(/"/g, "").split(",");
+                if(c.length === 2) item.estadoInfo = getStateInfo(parseFloat(c[0]), parseFloat(c[1]));
+              }
+            });
+            rawData = rawData.concat(response.data);
+          } else {
+            document.getElementById('errorPanel').style.display = 'block';
+            document.getElementById('errorMessage').innerHTML += `Omitido: <b>${file.name}</b><br>`;
+          }
+          
+          let ptg = Math.round(((i + 1) / files.length) * 100);
+          document.getElementById('progressBar').style.width = ptg + "%";
+          document.getElementById('progressCount').innerText = ptg + "%";
+          
+          applyFilters(); 
+        }
+        document.getElementById('progressText').innerText = "¡Carga Completa!";
+        document.getElementById('btnSync').innerText = 'Cargar Datos';
+        setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 3000);
+      } catch (err) {
+        document.getElementById('errorPanel').style.display = 'block';
+        document.getElementById('errorMessage').innerHTML = `Error crítico: Asegúrate de que la URL de la API es correcta y pública. Detalles: ${err.message}`;
+      } finally { document.getElementById('btnSync').disabled = false; }
+    }
+
+    function applyFilters() {
+      const fProc = document.getElementById('filterProc').value;
+      const fStat = document.getElementById('filterStatus').value;
+      const fNet = document.getElementById('filterNet').value;
+      const fMod = document.getElementById('filterModel').value;
+      const fState = document.getElementById('filterState').value;
+      
+      let models = new Set(), states = new Set();
+      
+      let filtered = rawData.filter(item => {
+        if(item.model) models.add(item.model);
+        if(item.estadoInfo.name) states.add(item.estadoInfo.name);
+        
+        return (fProc === "All" || item.proc === fProc) &&
+               (fStat === "All" || item.status === fStat) &&
+               (fNet === "All" || (item.net && item.net.toUpperCase().includes(fNet))) &&
+               (fMod === "All" || item.model === fMod) &&
+               (fState === "All" || item.estadoInfo.name === fState);
+      });
+
+      if(fMod === "All") fillSelect('filterModel', Array.from(models).sort(), "Modelo");
+      if(fState === "All") fillSelect('filterState', Array.from(states).sort(), "Estado");
+
+      document.getElementById('kpiTotal').innerText = filtered.length;
+      document.getElementById('kpiActive').innerText = filtered.filter(d => d.status === "Activated").length;
+      document.getElementById('kpiBattery').innerText = filtered.filter(d => parseInt(d.bat) < 20).length;
+
+      drawTableAndGeoChart(filtered);
+      updateInteractiveCharts(filtered);
+    }
+
+    function fillSelect(id, values, label) {
+      let sel = document.getElementById(id);
+      let html = `<option value="All">${label} (Todos)</option>`;
+      values.forEach(v => { if(v) html += `<option value="${v}">${v}</option>`; });
+      sel.innerHTML = html;
+    }
+
+    function drawTableAndGeoChart(data) {
+      let totals = {};
+      let maxCount = 0;
+
+      data.forEach(d => {
+        let stName = d.estadoInfo.name;
+        if(!totals[stName]) totals[stName] = { count: 0, iso: d.estadoInfo.iso };
+        totals[stName].count++;
+        if(totals[stName].count > maxCount) maxCount = totals[stName].count;
+      });
+
+      let tbody = document.getElementById('stateTableBody');
+      let tHtml = "";
+      let sortedStates = Object.keys(totals).sort((a,b) => totals[b].count - totals[a].count);
+      sortedStates.forEach(s => {
+        tHtml += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-medium text-gray-700">${s}</td><td class="p-2 text-blue-600 font-bold text-right">${totals[s].count}</td></tr>`;
+      });
+      tbody.innerHTML = tHtml;
+
+      if(chartsLoaded && google.visualization) {
+        let mapDataArray = [['Estado', 'Terminales']];
+        
+        for (let sName in totals) {
+          if(sName !== "Desconocido" && sName !== "Fuera de Venezuela") {
+            let iso = totals[sName].iso;
+            mapDataArray.push([{v: iso, f: sName}, totals[sName].count]);
+          }
+        }
+
+        let dataTable = google.visualization.arrayToDataTable(mapDataArray);
+        let options = {
+          region: 'VE',               
+          resolution: 'provinces',    
+          colorAxis: {colors: ['#dbeafe', '#3b82f6', '#1e3a8a']}, 
+          backgroundColor: '#f8fafc',
+          datalessRegionColor: '#e2e8f0',
+          defaultColor: '#cbd5e1'
+        };
+
+        let chart = new google.visualization.GeoChart(document.getElementById('mapGeneral'));
+        chart.draw(dataTable, options);
+      }
+    }
+
+    function updateInteractiveCharts(data) {
+      let netCnt = { "WIFI": 0, "4G": 0, "Otros": 0 };
+      let statCnt = {};
+      let modCnt = {};
+
+      data.forEach(d => {
+        if(d.net && d.net.toUpperCase().includes("WIFI")) netCnt["WIFI"]++;
+        else if(d.net && d.net.toUpperCase().includes("4G")) netCnt["4G"]++;
+        else netCnt["Otros"]++;
+        
+        let st = d.status || "Desconocido";
+        if(!statCnt[st]) statCnt[st] = 0;
+        statCnt[st]++;
+        
+        if(d.model) {
+          if(!modCnt[d.model]) modCnt[d.model] = 0;
+          modCnt[d.model]++;
+        }
+      });
+
+      if(chartNetInst) chartNetInst.destroy();
+      if(chartStatInst) chartStatInst.destroy();
+      if(chartModInst) chartModInst.destroy();
+
+      chartNetInst = new Chart(document.getElementById('chartNet'), {
+        type: 'doughnut',
+        data: { labels: Object.keys(netCnt), datasets: [{ data: Object.values(netCnt), backgroundColor: ['#3b82f6', '#10b981', '#cbd5e1'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+      });
+
+      chartStatInst = new Chart(document.getElementById('chartStatus'), {
+        type: 'pie',
+        data: { labels: Object.keys(statCnt), datasets: [{ data: Object.values(statCnt), backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#94a3b8'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+      });
+
+      let sortedMods = Object.keys(modCnt).sort((a,b) => modCnt[b] - modCnt[a]).slice(0, 5); 
+      let modVals = sortedMods.map(m => modCnt[m]);
+      chartModInst = new Chart(document.getElementById('chartModelos'), {
+        type: 'bar',
+        data: { labels: sortedMods, datasets: [{ label: 'Terminales', data: modVals, backgroundColor: '#6366f1' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+    }
+
+    function searchTerminal() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      document.getElementById('searchError').style.display = 'none';
+      document.getElementById('terminalCard').style.display = 'none';
+      let mapC = document.getElementById('googleMapContainer');
+      mapC.innerHTML = ''; 
+
+      if(q === "") return;
+
+      const t = rawData.find(i => (i.sn && i.sn.toLowerCase() === q));
+      if(!t) { document.getElementById('searchError').style.display = 'block'; return; }
+
+      document.getElementById('indProc').innerText = t.proc || 'N/A';
+      document.getElementById('indMerchant').innerText = t.merchant || 'N/A';
+      document.getElementById('indModel').innerText = t.model || 'N/A';
+      document.getElementById('indSN').innerText = t.sn || 'N/A';
+      document.getElementById('indApps').innerText = t.apps || 'Ninguna';
+      document.getElementById('indStatus').innerText = t.status || 'N/A';
+      document.getElementById('indOnline').innerText = t.online || 'N/A';
+      document.getElementById('indNet').innerText = t.net || 'N/A';
+      document.getElementById('indBat').innerText = t.bat || 'N/A';
+      document.getElementById('indPrinter').innerText = t.printer || 'N/A';
+      document.getElementById('indState').innerText = t.estadoInfo ? t.estadoInfo.name : 'N/A';
+
+      document.getElementById('terminalCard').style.display = 'grid';
+
+      if(t.loc) {
+        let c = t.loc.replace(/"/g, "").split(",");
+        if(c.length === 2) {
+          let iframe = document.createElement('iframe');
+          iframe.width = "100%"; iframe.height = "100%"; iframe.style.border = "0";
+          iframe.src = `https://maps.google.com/maps?q=${c[0]},${c[1]}&z=16&output=embed`;
+          mapC.appendChild(iframe);
+        }
+      } else {
+        mapC.innerHTML = '<p class="text-gray-500 mt-4 flex justify-center">Sin coordenadas disponibles.</p>';
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('viewGeneral').style.display = tab === 'general' ? 'block' : 'none';
+      document.getElementById('viewIndividual').style.display = tab === 'individual' ? 'block' : 'none';
+      document.getElementById('tabGeneral').className = tab === 'general' ? 'tab-active px-4 py-2 mr-4 transition' : 'text-gray-500 px-4 py-2 mr-4 transition hover:text-blue-500';
+      document.getElementById('tabIndividual').className = tab === 'individual' ? 'tab-active px-4 py-2 transition' : 'text-gray-500 px-4 py-2 transition hover:text-blue-500';
+    }
+  </script>
+</body>
+</html>
