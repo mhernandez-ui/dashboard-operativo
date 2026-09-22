@@ -8,24 +8,36 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
-    .progress-bar { transition: width 0.3s ease; }
-    iframe { border-radius: 0.5rem; }
     .table-container { max-height: 400px; overflow-y: auto; }
+    iframe { border-radius: 0.5rem; }
+    
+    /* Animación de la barra de progreso */
+    .progress-striped {
+      background-image: linear-gradient(45deg, rgba(255,255,255,.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.2) 75%, transparent 75%, transparent);
+      background-size: 1rem 1rem;
+      animation: stripemove 1s linear infinite;
+      transition: width 0.4s ease;
+    }
+    @keyframes stripemove { from { background-position: 1rem 0; } to { background-position: 0 0; } }
+
+    /* Custom Scrollbar para el Multi-Select */
+    .custom-scroll::-webkit-scrollbar { width: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-6">
 
-  <!-- Header con Doble Acción -->
+  <!-- Header -->
   <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-4 rounded shadow border border-gray-200 gap-4">
     <div>
       <h1 class="text-2xl font-bold text-gray-700">Gestión de Terminales</h1>
       <p id="lastUpdateText" class="text-xs text-gray-500 font-medium">Estado: Pendiente de sincronización</p>
     </div>
     <div class="flex gap-2">
-      <button onclick="startDataStream(false)" id="btnSync" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition font-medium text-sm">
+      <button onclick="startDataStream(false)" id="btnSync" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition font-medium text-sm" disabled>
         Cargar Datos
       </button>
-      <button onclick="startDataStream(true)" id="btnConsolidate" class="bg-amber-600 text-white px-4 py-2 rounded shadow hover:bg-amber-700 transition font-medium text-sm">
+      <button onclick="startDataStream(true)" id="btnConsolidate" class="bg-amber-600 text-white px-4 py-2 rounded shadow hover:bg-amber-700 transition font-medium text-sm" disabled>
         Re-escanear y Consolidar Drive
       </button>
     </div>
@@ -36,13 +48,14 @@
     <div id="errorMessage"></div>
   </div>
 
+  <!-- Panel de Progreso Dinámico -->
   <div id="progressPanel" class="hidden bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500">
     <div class="flex justify-between mb-2">
       <span id="progressText" class="text-sm font-bold text-gray-700">Conectando...</span>
-      <span id="progressCount" class="text-sm text-gray-500">0%</span>
+      <span id="progressCount" class="text-sm text-blue-600 font-bold">Iniciando...</span>
     </div>
-    <div class="w-full bg-gray-200 rounded-full h-2.5">
-      <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full progress-bar" style="width: 0%"></div>
+    <div class="w-full bg-gray-200 rounded-full h-3">
+      <div id="progressBar" class="bg-blue-600 h-3 rounded-full progress-striped" style="width: 0%"></div>
     </div>
   </div>
 
@@ -54,12 +67,54 @@
 
     <!-- VISTA 1: DASHBOARD GENERAL -->
     <div id="viewGeneral">
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <select id="filterProc" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Procesadora (Todas)</option><option value="Credicard">Credicard</option><option value="Platco">Platco</option></select>
-        <select id="filterStatus" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estatus (Todos)</option><option value="Activated">Activados</option><option value="No Activated">No Activados</option></select>
-        <select id="filterNet" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Red (Todas)</option><option value="WIFI">WIFI</option><option value="4G">4G</option></select>
-        <select id="filterModel" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Modelo (Todos)</option></select>
-        <select id="filterState" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estado (Todos)</option></select>
+      
+      <!-- Fila de Filtros Principales -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <!-- Filtro Principal: Propiedad -->
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad del Equipo</label>
+          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="applyFilters()">
+            <option value="All">Propiedad (Todas)</option>
+          </select>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Entidad Bancaria</label>
+          <select id="filterBanco" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Banco (Todos)</option></select>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Procesadora</label>
+          <select id="filterProc" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Procesadora (Todas)</option><option value="Credicard">Credicard</option><option value="Platco">Platco</option></select>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Estatus</label>
+          <select id="filterStatus" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estatus (Todos)</option><option value="Activated">Activados</option><option value="No Activated">No Activados</option></select>
+        </div>
+      </div>
+
+      <!-- Fila de Filtros Secundarios -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Red y Conexión</label>
+          <select id="filterNet" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Red (Todas)</option><option value="WIFI">WIFI</option><option value="4G">4G</option></select>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Modelo de POS</label>
+          <select id="filterModel" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Modelo (Todos)</option></select>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Estado Geográfico</label>
+          <select id="filterState" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estado (Todos)</option></select>
+        </div>
+        <!-- Multi-select de Deployment -->
+        <div class="flex flex-col relative">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Deployment Detallado</label>
+          <button id="btnDepMenu" onclick="toggleDepMenu()" class="w-full p-2 border rounded shadow-sm outline-none bg-white text-left flex justify-between items-center text-sm">
+            <span id="depBtnText">Deployment (Todos)</span> <span>▼</span>
+          </button>
+          <div id="depMenuContainer" class="hidden absolute top-16 z-50 w-full bg-white border border-gray-300 rounded shadow-xl max-h-60 overflow-y-auto custom-scroll p-2 text-sm">
+            <!-- Checkboxes dinámicos -->
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -69,9 +124,9 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Propiedad de Equipos</h3><div class="w-full h-48"><canvas id="chartPropiedad"></canvas></div></div>
+        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Top 5 Bancos</h3><div class="w-full h-48"><canvas id="chartBancos"></canvas></div></div>
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Conectividad (Red)</h3><div class="w-full h-48"><canvas id="chartNet"></canvas></div></div>
-        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Top 5 Modelos</h3><div class="w-full h-48"><canvas id="chartModelos"></canvas></div></div>
-        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Distribución de Estatus</h3><div class="w-full h-48"><canvas id="chartStatus"></canvas></div></div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -102,14 +157,14 @@
           <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Información Técnica</h3>
           <p><strong>Procesadora:</strong> <span id="indProc"></span></p>
           <p><strong>Comercio:</strong> <span id="indMerchant"></span></p>
+          <p><strong>Deployment:</strong> <span id="indDep" class="text-amber-600 font-semibold"></span></p>
+          <p><strong>Propiedad:</strong> <span id="indProp" class="text-blue-600 font-bold"></span></p>
+          <p><strong>Banco Asignado:</strong> <span id="indBanco" class="text-green-600 font-semibold"></span></p>
           <p><strong>Modelo:</strong> <span id="indModel"></span></p>
           <p><strong>Serial (SN):</strong> <span id="indSN"></span></p>
-          <p><strong>Apps Instaladas:</strong> <span id="indApps" class="text-sm text-blue-600"></span></p>
           <p class="mt-4"><strong>Estatus:</strong> <span id="indStatus"></span></p>
-          <p><strong>Última Conexión:</strong> <span id="indOnline"></span></p>
           <p><strong>Red:</strong> <span id="indNet"></span></p>
-          <p class="mt-4"><strong>Batería:</strong> <span id="indBat"></span></p>
-          <p><strong>Impresora:</strong> <span id="indPrinter"></span></p>
+          <p><strong>Batería:</strong> <span id="indBat"></span></p>
           <p><strong>Estado:</strong> <span id="indState"></span></p>
         </div>
         <div class="bg-white p-2 rounded shadow flex flex-col h-96">
@@ -126,7 +181,12 @@
 
     let rawData = [];
     let chartsLoaded = false;
-    let chartNetInst, chartModInst, chartStatInst;
+    let chartNetInst, chartPropInst, chartBancInst;
+    let selectedDeps = new Set();
+    let depMenuOpen = false;
+    let progressTimer = null; // Timer para la animación de carga
+
+    const bancosConocidos = ["BANESCO", "MERCANTIL", "PROVINCIAL", "VENEZUELA", "BANCARIBE", "CARONI", "TESORO", "BICENTENARIO", "PLAZA", "EXTERIOR", "ACTIVO", "BANCAMIGA", "BANCRECER", "BANPLUS", "BNC", "SOFITASA", "DEL SUR", "NACIONAL DE CREDITO"];
 
     const vzlaStates = [
       { name: "Amazonas", iso: "VE-X", lat: 3.5, lng: -66.0 }, { name: "Anzoátegui", iso: "VE-B", lat: 9.0, lng: -64.3 },
@@ -153,107 +213,206 @@
       return minD > 15 ? { name: "Fuera de Venezuela", iso: null } : st; 
     }
 
+    // Funciones de Clasificación Basadas en Deployment
+    function extractOwnership(dep) {
+      if(!dep) return "Desconocido";
+      dep = dep.toUpperCase();
+      if(dep.includes("VATC") || dep.includes("VAT")) return "VATC";
+      if(dep.includes("PLATCO")) return "PLATCO";
+      // Si no es VATC ni PLATCO pero tiene nombre de banco
+      if(bancosConocidos.some(b => dep.includes(b))) return "Banco";
+      return "Otro";
+    }
+
+    function extractBank(dep) {
+      if(!dep) return "Sin Banco";
+      dep = dep.toUpperCase();
+      for(let b of bancosConocidos) {
+        if(dep.includes(b)) return b;
+      }
+      return "Sin Banco Identificado";
+    }
+
+    // Animación Inteligente de Progreso
+    function startProgressAnimation(isConsolidating) {
+      let pb = document.getElementById('progressBar');
+      let pc = document.getElementById('progressCount');
+      let pt = document.getElementById('progressText');
+      
+      let progress = 5; 
+      let maxFakeProgress = 85; 
+      let stepTime = isConsolidating ? 1500 : 800; // Si escanea tarda más, avanza más lento
+
+      progressTimer = setInterval(() => {
+        if(progress < maxFakeProgress) {
+          progress += Math.floor(Math.random() * 5) + 1; // Incrementos aleatorios para más realismo
+          if(progress > maxFakeProgress) progress = maxFakeProgress;
+          pb.style.width = progress + '%';
+          pc.innerText = progress + '%';
+          
+          if(progress > 20 && progress < 50) pt.innerText = 'Transfiriendo paquete de datos...';
+          else if (progress >= 50 && progress < 75) pt.innerText = 'Procesando coordenadas espaciales...';
+          else if (progress >= 75) pt.innerText = 'Desencriptando y construyendo dashboard...';
+        }
+      }, stepTime);
+    }
+
+    function stopProgressAnimation() {
+      if(progressTimer) clearInterval(progressTimer);
+      document.getElementById('progressBar').style.width = '100%';
+      document.getElementById('progressCount').innerText = '100%';
+      document.getElementById('progressText').innerText = '¡Construcción completada!';
+    }
+
     window.onload = function() {
       google.charts.load('current', { 'packages': ['geochart'] });
       google.charts.setOnLoadCallback(() => {
          chartsLoaded = true;
-         startDataStream(false); // Intenta carga rápida inicial
+         document.getElementById('btnSync').disabled = false;
+         document.getElementById('btnConsolidate').disabled = false;
+         startDataStream(false);
       });
     };
 
     async function startDataStream(forceConsolidate = false) {
       let btnSync = document.getElementById('btnSync');
       let btnCons = document.getElementById('btnConsolidate');
-      btnSync.disabled = true;
-      btnCons.disabled = true;
+      btnSync.disabled = true; btnCons.disabled = true;
 
       document.getElementById('errorPanel').style.display = 'none';
       document.getElementById('progressPanel').style.display = 'block';
       document.getElementById('mainContainer').style.display = 'block';
       
-      let progressBar = document.getElementById('progressBar');
-      let progressText = document.getElementById('progressText');
-      let progressCount = document.getElementById('progressCount');
+      document.getElementById('progressBar').style.width = '2%';
+      document.getElementById('progressCount').innerText = '2%';
+      document.getElementById('progressText').innerText = forceConsolidate ? 'Escaneando hojas de Excel en Google Drive...' : 'Conectando con la base principal...';
 
-      if (forceConsolidate) {
-        progressText.innerText = 'Escaneando carpetas de Drive y consolidando Excel (1 a 3 min)...';
-        progressBar.style.width = '30%';
-        progressCount.innerText = '30%';
-      } else {
-        progressText.innerText = 'Descargando base de datos consolidada...';
-        progressBar.style.width = '50%';
-        progressCount.innerText = '50%';
-      }
+      startProgressAnimation(forceConsolidate);
 
       try {
         let action = forceConsolidate ? 'consolidate' : 'read';
         let response = await fetch(`${API_URL}?action=${action}&t=${Date.now()}`);
-        if (!response.ok) throw new Error("Error en la respuesta de la API");
+        if (!response.ok) throw new Error("Conexión interrumpida.");
         
         let result = await response.json();
         
         if (!result.success) {
           if (result.needsConsolidation) {
-            progressText.innerText = 'Base no encontrada. Iniciando consolidación inicial...';
+            stopProgressAnimation();
             startDataStream(true);
             return;
           }
-          throw new Error(result.error || "No se pudo procesar la solicitud.");
+          throw new Error(result.error);
         }
 
         rawData = result.data || [];
         
-        // Asignar ubicación por coordenadas
+        // Asignar nuevas propiedades
         rawData.forEach(item => {
           item.estadoInfo = { name: "Desconocido", iso: null };
           if(item.loc) {
             let c = item.loc.replace(/"/g, "").split(",");
             if(c.length === 2) item.estadoInfo = getStateInfo(parseFloat(c[0]), parseFloat(c[1]));
           }
+          item.propiedad = extractOwnership(item.deployment);
+          item.banco = extractBank(item.deployment);
         });
 
-        progressBar.style.width = '100%';
-        progressCount.innerText = '100%';
-        progressText.innerText = `Carga exitosa: ${rawData.length} equipos.`;
+        stopProgressAnimation();
         
         if(result.updatedAt) {
-          document.getElementById('lastUpdateText').innerText = `Última consolidación: ${result.updatedAt}`;
+          document.getElementById('lastUpdateText').innerText = `Última actualización: ${result.updatedAt}`;
         }
 
+        populateFilters();
         applyFilters();
 
-        setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 2000);
+        setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 1500);
       } catch (err) {
+        if(progressTimer) clearInterval(progressTimer);
         document.getElementById('errorPanel').style.display = 'block';
         document.getElementById('errorMessage').innerText = err.message;
       } finally {
-        btnSync.disabled = false;
-        btnCons.disabled = false;
+        btnSync.disabled = false; btnCons.disabled = false;
       }
     }
 
+    // Cargar listas desplegables una sola vez al inicio
+    function populateFilters() {
+      let mSet = new Set(), bSet = new Set(), pSet = new Set(), eSet = new Set(), dSet = new Set();
+      rawData.forEach(i => {
+        if(i.model) mSet.add(i.model);
+        if(i.banco) bSet.add(i.banco);
+        if(i.propiedad) pSet.add(i.propiedad);
+        if(i.estadoInfo.name) eSet.add(i.estadoInfo.name);
+        if(i.deployment) dSet.add(i.deployment);
+      });
+
+      fillSelect('filterModel', Array.from(mSet).sort(), "Modelo");
+      fillSelect('filterBanco', Array.from(bSet).sort(), "Banco");
+      fillSelect('filterPropiedad', Array.from(pSet).sort(), "Propiedad");
+      fillSelect('filterState', Array.from(eSet).sort(), "Estado");
+
+      // Construir menú Multi-Select de Deployment
+      let depContainer = document.getElementById('depMenuContainer');
+      let dHtml = '';
+      Array.from(dSet).sort().forEach(dep => {
+        dHtml += `
+          <label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded cursor-pointer truncate">
+            <input type="checkbox" value="${dep}" onchange="handleDepSelect(this)" class="form-checkbox text-blue-600 rounded">
+            <span title="${dep}">${dep}</span>
+          </label>`;
+      });
+      depContainer.innerHTML = dHtml;
+    }
+
+    function toggleDepMenu() {
+      let menu = document.getElementById('depMenuContainer');
+      depMenuOpen = !depMenuOpen;
+      menu.style.display = depMenuOpen ? 'block' : 'none';
+    }
+
+    // Cierra el menú de deployments si se hace clic afuera
+    document.addEventListener('click', function(event) {
+      let btn = document.getElementById('btnDepMenu');
+      let menu = document.getElementById('depMenuContainer');
+      if (depMenuOpen && !btn.contains(event.target) && !menu.contains(event.target)) {
+        depMenuOpen = false;
+        menu.style.display = 'none';
+      }
+    });
+
+    function handleDepSelect(checkbox) {
+      if(checkbox.checked) selectedDeps.add(checkbox.value);
+      else selectedDeps.delete(checkbox.value);
+      
+      let btnTxt = document.getElementById('depBtnText');
+      if(selectedDeps.size === 0) btnTxt.innerText = "Deployment (Todos)";
+      else if(selectedDeps.size === 1) btnTxt.innerText = "1 Seleccionado";
+      else btnTxt.innerText = `${selectedDeps.size} Seleccionados`;
+      
+      applyFilters();
+    }
+
     function applyFilters() {
+      const fProp = document.getElementById('filterPropiedad').value;
+      const fBanc = document.getElementById('filterBanco').value;
       const fProc = document.getElementById('filterProc').value;
       const fStat = document.getElementById('filterStatus').value;
       const fNet = document.getElementById('filterNet').value;
       const fMod = document.getElementById('filterModel').value;
       const fState = document.getElementById('filterState').value;
       
-      let models = new Set(), states = new Set();
-      
-      let filtered = rawData.filter(item => {
-        if(item.model) models.add(item.model);
-        if(item.estadoInfo.name) states.add(item.estadoInfo.name);
-        
-        return (fProc === "All" || item.proc === fProc) &&
-               (fStat === "All" || item.status === fStat) &&
-               (fNet === "All" || (item.net && item.net.toUpperCase().includes(fNet))) &&
-               (fMod === "All" || item.model === fMod) &&
-               (fState === "All" || item.estadoInfo.name === fState);
+      let filtered = rawData.filter(i => {
+        return (fProp === "All" || i.propiedad === fProp) &&
+               (fBanc === "All" || i.banco === fBanc) &&
+               (fProc === "All" || i.proc === fProc) &&
+               (fStat === "All" || i.status === fStat) &&
+               (fNet === "All" || (i.net && i.net.toUpperCase().includes(fNet))) &&
+               (fMod === "All" || i.model === fMod) &&
+               (fState === "All" || i.estadoInfo.name === fState) &&
+               (selectedDeps.size === 0 || selectedDeps.has(i.deployment));
       });
-
-      if(fMod === "All") fillSelect('filterModel', Array.from(models).sort(), "Modelo");
-      if(fState === "All") fillSelect('filterState', Array.from(states).sort(), "Estado");
 
       document.getElementById('kpiTotal').innerText = filtered.length;
       document.getElementById('kpiActive').innerText = filtered.filter(d => d.status === "Activated").length;
@@ -291,71 +450,54 @@
 
       if(chartsLoaded && google.visualization) {
         let mapDataArray = [['Estado', 'Terminales']];
-        
         for (let sName in totals) {
           if(sName !== "Desconocido" && sName !== "Fuera de Venezuela") {
-            let iso = totals[sName].iso;
-            mapDataArray.push([{v: iso, f: sName}, totals[sName].count]);
+            mapDataArray.push([{v: totals[sName].iso, f: sName}, totals[sName].count]);
           }
         }
-
         let dataTable = google.visualization.arrayToDataTable(mapDataArray);
         let options = {
-          region: 'VE',               
-          resolution: 'provinces',    
+          region: 'VE', resolution: 'provinces',    
           colorAxis: {colors: ['#dbeafe', '#3b82f6', '#1e3a8a']}, 
-          backgroundColor: '#f8fafc',
-          datalessRegionColor: '#e2e8f0',
-          defaultColor: '#cbd5e1'
+          backgroundColor: '#f8fafc', datalessRegionColor: '#e2e8f0', defaultColor: '#cbd5e1'
         };
-
         let chart = new google.visualization.GeoChart(document.getElementById('mapGeneral'));
         chart.draw(dataTable, options);
       }
     }
 
     function updateInteractiveCharts(data) {
-      let netCnt = { "WIFI": 0, "4G": 0, "Otros": 0 };
-      let statCnt = {};
-      let modCnt = {};
-
+      let netCnt = { "WIFI": 0, "4G": 0, "Otros": 0 }, propCnt = {}, bancCnt = {};
       data.forEach(d => {
         if(d.net && d.net.toUpperCase().includes("WIFI")) netCnt["WIFI"]++;
         else if(d.net && d.net.toUpperCase().includes("4G")) netCnt["4G"]++;
         else netCnt["Otros"]++;
         
-        let st = d.status || "Desconocido";
-        if(!statCnt[st]) statCnt[st] = 0;
-        statCnt[st]++;
-        
-        if(d.model) {
-          if(!modCnt[d.model]) modCnt[d.model] = 0;
-          modCnt[d.model]++;
-        }
+        if(d.propiedad) propCnt[d.propiedad] = (propCnt[d.propiedad] || 0) + 1;
+        if(d.banco && d.banco !== "Sin Banco Identificado") bancCnt[d.banco] = (bancCnt[d.banco] || 0) + 1;
       });
 
       if(chartNetInst) chartNetInst.destroy();
-      if(chartStatInst) chartStatInst.destroy();
-      if(chartModInst) chartModInst.destroy();
+      if(chartPropInst) chartPropInst.destroy();
+      if(chartBancInst) chartBancInst.destroy();
+
+      chartPropInst = new Chart(document.getElementById('chartPropiedad'), {
+        type: 'pie',
+        data: { labels: Object.keys(propCnt), datasets: [{ data: Object.values(propCnt), backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#6366f1'] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+      });
+
+      let sB = Object.keys(bancCnt).sort((a,b) => bancCnt[b] - bancCnt[a]).slice(0, 5); 
+      chartBancInst = new Chart(document.getElementById('chartBancos'), {
+        type: 'bar',
+        data: { labels: sB, datasets: [{ label: 'Terminales', data: sB.map(m => bancCnt[m]), backgroundColor: '#10b981' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
 
       chartNetInst = new Chart(document.getElementById('chartNet'), {
         type: 'doughnut',
         data: { labels: Object.keys(netCnt), datasets: [{ data: Object.values(netCnt), backgroundColor: ['#3b82f6', '#10b981', '#cbd5e1'] }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-      });
-
-      chartStatInst = new Chart(document.getElementById('chartStatus'), {
-        type: 'pie',
-        data: { labels: Object.keys(statCnt), datasets: [{ data: Object.values(statCnt), backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#94a3b8'] }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
-      });
-
-      let sortedMods = Object.keys(modCnt).sort((a,b) => modCnt[b] - modCnt[a]).slice(0, 5); 
-      let modVals = sortedMods.map(m => modCnt[m]);
-      chartModInst = new Chart(document.getElementById('chartModelos'), {
-        type: 'bar',
-        data: { labels: sortedMods, datasets: [{ label: 'Terminales', data: modVals, backgroundColor: '#6366f1' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
     }
 
@@ -363,9 +505,7 @@
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       document.getElementById('searchError').style.display = 'none';
       document.getElementById('terminalCard').style.display = 'none';
-      let mapC = document.getElementById('googleMapContainer');
-      mapC.innerHTML = ''; 
-
+      let mapC = document.getElementById('googleMapContainer'); mapC.innerHTML = ''; 
       if(q === "") return;
 
       const t = rawData.find(i => (i.sn && i.sn.toLowerCase() === q));
@@ -373,14 +513,14 @@
 
       document.getElementById('indProc').innerText = t.proc || 'N/A';
       document.getElementById('indMerchant').innerText = t.merchant || 'N/A';
+      document.getElementById('indDep').innerText = t.deployment || 'N/A';
+      document.getElementById('indProp').innerText = t.propiedad || 'N/A';
+      document.getElementById('indBanco').innerText = t.banco || 'N/A';
       document.getElementById('indModel').innerText = t.model || 'N/A';
       document.getElementById('indSN').innerText = t.sn || 'N/A';
-      document.getElementById('indApps').innerText = t.apps || 'Ninguna';
       document.getElementById('indStatus').innerText = t.status || 'N/A';
-      document.getElementById('indOnline').innerText = t.online || 'N/A';
       document.getElementById('indNet').innerText = t.net || 'N/A';
       document.getElementById('indBat').innerText = t.bat || 'N/A';
-      document.getElementById('indPrinter').innerText = t.printer || 'N/A';
       document.getElementById('indState').innerText = t.estadoInfo ? t.estadoInfo.name : 'N/A';
 
       document.getElementById('terminalCard').style.display = 'grid';
@@ -393,16 +533,14 @@
           iframe.src = `https://maps.google.com/maps?q=${c[0]},${c[1]}&z=16&output=embed`;
           mapC.appendChild(iframe);
         }
-      } else {
-        mapC.innerHTML = '<p class="text-gray-500 mt-4 flex justify-center">Sin coordenadas disponibles.</p>';
       }
     }
 
-    function switchTab(tab) {
-      document.getElementById('viewGeneral').style.display = tab === 'general' ? 'block' : 'none';
-      document.getElementById('viewIndividual').style.display = tab === 'individual' ? 'block' : 'none';
-      document.getElementById('tabGeneral').className = tab === 'general' ? 'tab-active px-4 py-2 mr-4 transition' : 'text-gray-500 px-4 py-2 mr-4 transition hover:text-blue-500';
-      document.getElementById('tabIndividual').className = tab === 'individual' ? 'tab-active px-4 py-2 transition' : 'text-gray-500 px-4 py-2 transition hover:text-blue-500';
+    function switchTab(t) {
+      document.getElementById('viewGeneral').style.display = t === 'general' ? 'block' : 'none';
+      document.getElementById('viewIndividual').style.display = t === 'individual' ? 'block' : 'none';
+      document.getElementById('tabGeneral').className = t === 'general' ? 'tab-active px-4 py-2 mr-4' : 'text-gray-500 px-4 py-2 mr-4';
+      document.getElementById('tabIndividual').className = t === 'individual' ? 'tab-active px-4 py-2' : 'text-gray-500 px-4 py-2';
     }
   </script>
 </body>
