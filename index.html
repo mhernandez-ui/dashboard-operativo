@@ -147,14 +147,38 @@
       return minD > 15 ? { name: "Fuera de Venezuela", iso: null } : st; 
     }
 
-    // Esta es la nueva función que se comunica con tu API de Google
-    async function runAsync(fn, id = null, processor = null) {
-      let url = `${API_URL}?action=${fn}`;
+// Función de conexión ultra-resistente (Auto-Reconexión + Anti-Caché)
+    async function runAsync(fn, id = null, processor = null, retries = 3) {
+      // 1. Rompe-caché: Evita que el navegador se atasque con peticiones viejas
+      let url = `${API_URL}?action=${fn}&t=${Date.now()}`;
       if (id) url += `&id=${encodeURIComponent(id)}&processor=${encodeURIComponent(processor)}`;
       
-      let response = await fetch(url);
-      if (!response.ok) throw new Error("Error de conexión con la API de Google");
-      return await response.json();
+      // 2. Bucle de intentos: Si Google parpadea, lo volvemos a intentar
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          let response = await fetch(url);
+          
+          if (!response.ok) {
+            throw new Error(`Google respondió con error HTTP: ${response.status}`);
+          }
+          
+          return await response.json();
+          
+        } catch (error) {
+          console.warn(`Fallo en el intento ${attempt} para ${fn}. Motivo: ${error.message}`);
+          
+          // Si ya agotamos los intentos, lanzamos el error para detener el sistema
+          if (attempt === retries) {
+            throw new Error(`La conexión falló tras ${retries} intentos. Por favor recarga la página.`);
+          }
+          
+          // Si falló pero quedan intentos, actualizamos el texto y esperamos 1.5 segundos
+          let progressText = document.getElementById('progressText');
+          if(progressText) progressText.innerText = `Reconectando archivo... (Intento ${attempt + 1})`;
+          
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      }
     }
 
     window.onload = function() {
