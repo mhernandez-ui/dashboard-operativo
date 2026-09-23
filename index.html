@@ -31,8 +31,8 @@
       <p id="lastUpdateText" class="text-xs text-gray-500 font-medium">Estado: Pendiente de sincronización</p>
     </div>
     <div class="flex gap-2">
-      <button onclick="startDataStream(false)" id="btnSync" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition font-medium text-sm" disabled>
-        Cargar Datos
+      <button onclick="resetFilters()" id="btnReset" class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600 transition font-medium text-sm">
+        Limpiar Filtros
       </button>
       <button onclick="startDataStream(true)" id="btnConsolidate" class="bg-amber-600 text-white px-4 py-2 rounded shadow hover:bg-amber-700 transition font-medium text-sm" disabled>
         Re-escanear y Consolidar Drive
@@ -45,6 +45,7 @@
     <div id="errorMessage"></div>
   </div>
 
+  <!-- Panel de Progreso -->
   <div id="progressPanel" class="hidden bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500">
     <div class="flex justify-between mb-2">
       <span id="progressText" class="text-sm font-bold text-gray-700">Conectando...</span>
@@ -66,7 +67,6 @@
       
       <!-- Fila de Filtros Principales -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <!-- Filtro Maestro -->
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad (Filtro Maestro)</label>
           <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()">
@@ -116,26 +116,37 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-3xl font-bold">0</p></div>
-        <div class="bg-white p-4 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Activos</h3><p id="kpiActive" class="text-3xl font-bold text-green-600">0</p></div>
-        <div class="bg-white p-4 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Batería &lt; 20%</h3><p id="kpiBattery" class="text-3xl font-bold text-red-600">0</p></div>
+      <!-- KPIs (Ahora son 4) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-2xl font-bold">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-emerald-500"><h3 class="text-gray-500 text-xs font-bold uppercase">En Línea (Hoy)</h3><p id="kpiOnline" class="text-2xl font-bold text-emerald-600">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Activos</h3><p id="kpiActive" class="text-2xl font-bold text-green-600">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Batería &lt; 20%</h3><p id="kpiBattery" class="text-2xl font-bold text-red-600">0</p></div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <!-- Gráficos (Matriz 2x2 para acomodar Modelos y Operadoras) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Propiedad de Equipos</h3><div class="w-full h-48"><canvas id="chartPropiedad"></canvas></div></div>
-        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Top 5 Bancos</h3><div class="w-full h-48"><canvas id="chartBancos"></canvas></div></div>
-        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Conectividad (Red)</h3><div class="w-full h-48"><canvas id="chartNet"></canvas></div></div>
+        <div class="bg-white p-4 rounded shadow md:col-span-2"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Top Modelos</h3><div class="w-full h-48"><canvas id="chartModelos"></canvas></div></div>
+        <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Operadoras 4G</h3><div class="w-full h-48"><canvas id="chartOperadoras"></canvas></div></div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <!-- Mapa y Tablas -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <!-- Mapa ocupa 2 columnas -->
+        <div class="col-span-1 md:col-span-2 bg-white p-4 rounded shadow">
+          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2">Densidad Geográfica (Google GeoChart)</h2>
+          <div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center"></div>
+        </div>
+        <!-- Tabla de Estados -->
         <div class="col-span-1 bg-white p-4 rounded shadow table-container">
-          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 sticky top-0 bg-white border-b pb-2">Densidad por Estado</h2>
+          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 sticky top-0 bg-white border-b pb-2">Ranking por Estado</h2>
           <table class="w-full text-left text-sm mt-2"><tbody id="stateTableBody"></tbody></table>
         </div>
-        <div class="col-span-2 bg-white p-4 rounded shadow">
-          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2">Mapa Coroplético (Google GeoChart)</h2>
-          <div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center"></div>
+        <!-- Tabla de Deployments -->
+        <div class="col-span-1 bg-white p-4 rounded shadow table-container">
+          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 sticky top-0 bg-white border-b pb-2">Detalle por Deployment</h2>
+          <table class="w-full text-left text-sm mt-2"><tbody id="depTableBody"></tbody></table>
         </div>
       </div>
     </div>
@@ -162,6 +173,7 @@
           <p><strong>Modelo:</strong> <span id="indModel"></span></p>
           <p><strong>Serial (SN):</strong> <span id="indSN"></span></p>
           <p class="mt-4"><strong>Estatus:</strong> <span id="indStatus"></span></p>
+          <p><strong>Última Conexión:</strong> <span id="indOnline"></span></p>
           <p><strong>Red y Operadora:</strong> <span id="indNetOp" class="text-purple-600 font-bold"></span></p>
           <p><strong>Batería:</strong> <span id="indBat"></span></p>
           <p><strong>Estado (Geográfico):</strong> <span id="indState"></span></p>
@@ -184,19 +196,17 @@
 
     let rawData = [];
     let chartsLoaded = false;
-    let chartNetInst, chartPropInst, chartBancInst;
+    let chartPropInst, chartOpInst, chartModInst;
     let selectedDeps = new Set();
     let depMenuOpen = false;
     let progressTimer = null; 
 
-    // Formateador de números (ej: 1234 -> 1.234)
     function fmtNum(num) {
       return Number(num).toLocaleString('es-VE');
     }
 
     const bancosConocidos = ["BANESCO", "MERCANTIL", "PROVINCIAL", "VENEZUELA", "BANCARIBE", "CARONI", "TESORO", "BICENTENARIO", "PLAZA", "EXTERIOR", "ACTIVO", "BANCAMIGA", "BANCRECER", "BANPLUS", "BNC", "SOFITASA", "DEL SUR", "NACIONAL DE CREDITO"];
 
-    // CORRECCIÓN MAPA: Amazonas es VE-Z y Vargas es VE-X
     const vzlaStates = [
       { name: "Amazonas", iso: "VE-Z", lat: 3.5, lng: -66.0 }, { name: "Anzoátegui", iso: "VE-B", lat: 9.0, lng: -64.3 },
       { name: "Apure", iso: "VE-C", lat: 7.1, lng: -68.8 }, { name: "Aragua", iso: "VE-D", lat: 10.0, lng: -67.4 },
@@ -242,7 +252,6 @@
     function startProgressAnimation(isConsolidating) {
       let pb = document.getElementById('progressBar'), pc = document.getElementById('progressCount'), pt = document.getElementById('progressText');
       let progress = 5, maxFakeProgress = 85, stepTime = isConsolidating ? 1500 : 800; 
-
       progressTimer = setInterval(() => {
         if(progress < maxFakeProgress) {
           progress += Math.floor(Math.random() * 5) + 1; 
@@ -266,15 +275,14 @@
       google.charts.load('current', { 'packages': ['geochart'] });
       google.charts.setOnLoadCallback(() => {
          chartsLoaded = true;
-         document.getElementById('btnSync').disabled = false;
          document.getElementById('btnConsolidate').disabled = false;
-         startDataStream(false);
+         startDataStream(false); // Carga Automática inicial
       });
     };
 
     async function startDataStream(forceConsolidate = false) {
-      let btnSync = document.getElementById('btnSync'), btnCons = document.getElementById('btnConsolidate');
-      btnSync.disabled = true; btnCons.disabled = true;
+      let btnCons = document.getElementById('btnConsolidate');
+      btnCons.disabled = true;
 
       document.getElementById('errorPanel').style.display = 'none';
       document.getElementById('progressPanel').style.display = 'block';
@@ -317,7 +325,7 @@
         stopProgressAnimation();
         if(result.updatedAt) document.getElementById('lastUpdateText').innerText = `Última actualización: ${result.updatedAt}`;
 
-        populatePropiedadFilter(); // Cargamos solo el filtro maestro inicialmente
+        populatePropiedadFilter();
         applyFilters();
 
         setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 1500);
@@ -325,10 +333,14 @@
         if(progressTimer) clearInterval(progressTimer);
         document.getElementById('errorPanel').style.display = 'block';
         document.getElementById('errorMessage').innerText = err.message;
-      } finally { btnSync.disabled = false; btnCons.disabled = false; }
+      } finally { btnCons.disabled = false; }
     }
 
-    // Funciones Lógica en Cascada
+    function resetFilters() {
+      document.getElementById('filterPropiedad').value = "All";
+      onPropiedadChange(); // Esto reinicia el resto
+    }
+
     function populatePropiedadFilter() {
       let pSet = new Set();
       rawData.forEach(i => { if(i.propiedad) pSet.add(i.propiedad); });
@@ -336,12 +348,9 @@
     }
 
     function onPropiedadChange() {
-      // 1. Obtener la propiedad seleccionada
       let selectedProp = document.getElementById('filterPropiedad').value;
       
-      // 2. Filtrar las opciones disponibles en el RESTO de los filtros basándonos SOLO en esa propiedad
       let bSet = new Set(), mSet = new Set(), eSet = new Set(), dSet = new Set();
-      
       rawData.forEach(i => {
         if(selectedProp === "All" || i.propiedad === selectedProp) {
           if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco);
@@ -351,12 +360,10 @@
         }
       });
 
-      // 3. Re-poblar los filtros secundarios y dejarlos en "All"
       fillSelect('filterBanco', Array.from(bSet).sort(), "Banco");
       fillSelect('filterModel', Array.from(mSet).sort(), "Modelo");
       fillSelect('filterState', Array.from(eSet).sort(), "Estado");
       
-      // Re-construir Deployments
       selectedDeps.clear();
       document.getElementById('depBtnText').innerText = "Deployment (Todos)";
       let depContainer = document.getElementById('depMenuContainer');
@@ -370,7 +377,12 @@
       });
       depContainer.innerHTML = dHtml;
 
-      // 4. Aplicar el filtro a la data y los gráficos
+      // Reseteamos menús individuales
+      document.getElementById('filterProc').value = "All";
+      document.getElementById('filterStatus').value = "All";
+      document.getElementById('filterNet').value = "All";
+      handleNetChange(); 
+
       applyFilters();
     }
 
@@ -378,12 +390,11 @@
       let netSelect = document.getElementById('filterNet').value;
       let opSelect = document.getElementById('filterOperadora');
       
-      // Filtro Operadora SOLO activo si se selecciona 4G
       if(netSelect && netSelect.toUpperCase().includes("4G")) {
         opSelect.disabled = false;
         opSelect.classList.remove("bg-gray-100");
       } else {
-        opSelect.value = "All"; // Resetear
+        opSelect.value = "All"; 
         opSelect.disabled = true;
         opSelect.classList.add("bg-gray-100");
       }
@@ -443,34 +454,58 @@
                (selectedDeps.size === 0 || selectedDeps.has(i.deployment));
       });
 
-      // SEPARADORES DE MILES
+      // Cálculo del KPI "En Línea Hoy"
+      let today = new Date();
+      let activosHoy = filtered.filter(d => {
+        if(!d.online) return false;
+        let dDate = new Date(d.online);
+        return dDate.getDate() === today.getDate() && dDate.getMonth() === today.getMonth() && dDate.getFullYear() === today.getFullYear();
+      }).length;
+
       document.getElementById('kpiTotal').innerText = fmtNum(filtered.length);
+      document.getElementById('kpiOnline').innerText = fmtNum(activosHoy);
       document.getElementById('kpiActive').innerText = fmtNum(filtered.filter(d => d.status === "Activated").length);
       document.getElementById('kpiBattery').innerText = fmtNum(filtered.filter(d => parseInt(d.bat) < 20).length);
 
-      drawTableAndGeoChart(filtered);
+      drawTablesAndGeoChart(filtered);
       updateInteractiveCharts(filtered);
     }
 
-    function drawTableAndGeoChart(data) {
-      let totals = {}, maxCount = 0;
+    function drawTablesAndGeoChart(data) {
+      let totals = {}, depTotals = {}, maxCount = 0;
 
       data.forEach(d => {
+        // Para mapa y ranking estados
         let stName = d.estadoInfo.name;
         if(!totals[stName]) totals[stName] = { count: 0, iso: d.estadoInfo.iso };
         totals[stName].count++;
         if(totals[stName].count > maxCount) maxCount = totals[stName].count;
+
+        // Para ranking de deployments
+        let dName = d.deployment || "Desconocido";
+        if(!depTotals[dName]) depTotals[dName] = 0;
+        depTotals[dName]++;
       });
 
+      // 1. Tabla de Estados
       let tbody = document.getElementById('stateTableBody');
       let tHtml = "";
       let sortedStates = Object.keys(totals).sort((a,b) => totals[b].count - totals[a].count);
       sortedStates.forEach(s => {
-        // Formateo con separador de miles
         tHtml += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-medium text-gray-700">${s}</td><td class="p-2 text-blue-600 font-bold text-right">${fmtNum(totals[s].count)}</td></tr>`;
       });
       tbody.innerHTML = tHtml;
 
+      // 2. Tabla de Deployments
+      let dtbody = document.getElementById('depTableBody');
+      let dtHtml = "";
+      let sortedDeps = Object.keys(depTotals).sort((a,b) => depTotals[b] - depTotals[a]);
+      sortedDeps.forEach(dep => {
+        dtHtml += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-medium text-gray-700 text-xs truncate max-w-[150px]" title="${dep}">${dep}</td><td class="p-2 text-amber-600 font-bold text-right">${fmtNum(depTotals[dep])}</td></tr>`;
+      });
+      dtbody.innerHTML = dtHtml;
+
+      // 3. Mapa GeoChart
       if(chartsLoaded && google.visualization) {
         let mapDataArray = [['Estado', 'Terminales']];
         for (let sName in totals) {
@@ -490,19 +525,19 @@
     }
 
     function updateInteractiveCharts(data) {
-      let netCnt = { "WIFI": 0, "4G": 0, "Otros": 0 }, propCnt = {}, bancCnt = {};
+      let propCnt = {}, opCnt = {}, modCnt = {};
+      
       data.forEach(d => {
-        if(d.net && d.net.toUpperCase().includes("WIFI")) netCnt["WIFI"]++;
-        else if(d.net && d.net.toUpperCase().includes("4G")) netCnt["4G"]++;
-        else netCnt["Otros"]++;
-        
         if(d.propiedad) propCnt[d.propiedad] = (propCnt[d.propiedad] || 0) + 1;
-        if(d.banco && d.banco !== "Sin Banco Identificado" && d.banco !== "Sin Banco") bancCnt[d.banco] = (bancCnt[d.banco] || 0) + 1;
+        if(d.model) modCnt[d.model] = (modCnt[d.model] || 0) + 1;
+        
+        // Operadoras solo aplican a equipos que las tienen definidas (Usualmente 4G)
+        if(d.operadora && d.operadora !== "Desconocido") opCnt[d.operadora] = (opCnt[d.operadora] || 0) + 1;
       });
 
-      if(chartNetInst) chartNetInst.destroy();
       if(chartPropInst) chartPropInst.destroy();
-      if(chartBancInst) chartBancInst.destroy();
+      if(chartModInst) chartModInst.destroy();
+      if(chartOpInst) chartOpInst.destroy();
 
       chartPropInst = new Chart(document.getElementById('chartPropiedad'), {
         type: 'pie',
@@ -510,16 +545,16 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
       });
 
-      let sB = Object.keys(bancCnt).sort((a,b) => bancCnt[b] - bancCnt[a]).slice(0, 5); 
-      chartBancInst = new Chart(document.getElementById('chartBancos'), {
+      let sM = Object.keys(modCnt).sort((a,b) => modCnt[b] - modCnt[a]).slice(0, 10); 
+      chartModInst = new Chart(document.getElementById('chartModelos'), {
         type: 'bar',
-        data: { labels: sB, datasets: [{ label: 'Terminales', data: sB.map(m => bancCnt[m]), backgroundColor: '#10b981' }] },
+        data: { labels: sM, datasets: [{ label: 'Terminales', data: sM.map(m => modCnt[m]), backgroundColor: '#6366f1' }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
 
-      chartNetInst = new Chart(document.getElementById('chartNet'), {
+      chartOpInst = new Chart(document.getElementById('chartOperadoras'), {
         type: 'doughnut',
-        data: { labels: Object.keys(netCnt), datasets: [{ data: Object.values(netCnt), backgroundColor: ['#3b82f6', '#10b981', '#cbd5e1'] }] },
+        data: { labels: Object.keys(opCnt), datasets: [{ data: Object.values(opCnt), backgroundColor: ['#22c55e', '#3b82f6', '#ef4444'] }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
       });
     }
@@ -550,6 +585,13 @@
       document.getElementById('indNetOp').innerText = netOpStr;
       
       document.getElementById('indBat').innerText = t.bat || 'N/A';
+      
+      let lastOnline = "N/A";
+      if(t.online) {
+        let olDate = new Date(t.online);
+        lastOnline = olDate.toLocaleString("es-VE");
+      }
+      document.getElementById('indOnline').innerText = lastOnline;
       document.getElementById('indState').innerText = t.estadoInfo ? t.estadoInfo.name : 'N/A';
 
       // Tratamiento limpio para las APPS (Viñetas)
