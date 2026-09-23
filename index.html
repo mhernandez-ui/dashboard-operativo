@@ -11,7 +11,6 @@
     .table-container { max-height: 400px; overflow-y: auto; }
     iframe { border-radius: 0.5rem; }
     
-    /* Animación de la barra de progreso */
     .progress-striped {
       background-image: linear-gradient(45deg, rgba(255,255,255,.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.2) 75%, transparent 75%, transparent);
       background-size: 1rem 1rem;
@@ -46,7 +45,6 @@
     <div id="errorMessage"></div>
   </div>
 
-  <!-- Panel de Progreso -->
   <div id="progressPanel" class="hidden bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500">
     <div class="flex justify-between mb-2">
       <span id="progressText" class="text-sm font-bold text-gray-700">Conectando...</span>
@@ -68,9 +66,10 @@
       
       <!-- Fila de Filtros Principales -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <!-- Filtro Maestro -->
         <div class="flex flex-col">
-          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad del Equipo</label>
-          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="applyFilters()">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad (Filtro Maestro)</label>
+          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()">
             <option value="All">Propiedad (Todas)</option>
           </select>
         </div>
@@ -89,10 +88,16 @@
       </div>
 
       <!-- Fila de Filtros Secundarios -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Red y Conexión</label>
-          <select id="filterNet" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Red (Todas)</option><option value="WIFI">WIFI</option><option value="4G">4G</option></select>
+          <select id="filterNet" class="p-2 border rounded shadow-sm outline-none" onchange="handleNetChange()"><option value="All">Red (Todas)</option><option value="WIFI">WIFI</option><option value="4G">4G</option></select>
+        </div>
+        <div class="flex flex-col">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Operadora (Solo 4G)</label>
+          <select id="filterOperadora" class="p-2 border rounded shadow-sm outline-none bg-gray-100" onchange="applyFilters()" disabled>
+            <option value="All">Operadora (Todas)</option><option value="Movistar">Movistar</option><option value="Digitel">Digitel</option><option value="Movilnet">Movilnet</option>
+          </select>
         </div>
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Modelo de POS</label>
@@ -102,33 +107,27 @@
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Estado Geográfico</label>
           <select id="filterState" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estado (Todos)</option></select>
         </div>
-        <!-- Multi-select de Deployment -->
         <div class="flex flex-col relative">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Deployment Detallado</label>
           <button id="btnDepMenu" onclick="toggleDepMenu()" class="w-full p-2 border rounded shadow-sm outline-none bg-white text-left flex justify-between items-center text-sm">
             <span id="depBtnText">Deployment (Todos)</span> <span>▼</span>
           </button>
-          <div id="depMenuContainer" class="hidden absolute top-16 z-50 w-full bg-white border border-gray-300 rounded shadow-xl max-h-60 overflow-y-auto custom-scroll p-2 text-sm">
-            <!-- Checkboxes dinámicos -->
-          </div>
+          <div id="depMenuContainer" class="hidden absolute top-16 z-50 w-full bg-white border border-gray-300 rounded shadow-xl max-h-60 overflow-y-auto custom-scroll p-2 text-sm"></div>
         </div>
       </div>
 
-      <!-- KPIs -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-3xl font-bold">0</p></div>
         <div class="bg-white p-4 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Activos</h3><p id="kpiActive" class="text-3xl font-bold text-green-600">0</p></div>
         <div class="bg-white p-4 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-sm font-bold uppercase">Batería &lt; 20%</h3><p id="kpiBattery" class="text-3xl font-bold text-red-600">0</p></div>
       </div>
 
-      <!-- Gráficos -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Propiedad de Equipos</h3><div class="w-full h-48"><canvas id="chartPropiedad"></canvas></div></div>
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Top 5 Bancos</h3><div class="w-full h-48"><canvas id="chartBancos"></canvas></div></div>
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Conectividad (Red)</h3><div class="w-full h-48"><canvas id="chartNet"></canvas></div></div>
       </div>
 
-      <!-- Mapa y Tabla -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="col-span-1 bg-white p-4 rounded shadow table-container">
           <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 sticky top-0 bg-white border-b pb-2">Densidad por Estado</h2>
@@ -163,9 +162,13 @@
           <p><strong>Modelo:</strong> <span id="indModel"></span></p>
           <p><strong>Serial (SN):</strong> <span id="indSN"></span></p>
           <p class="mt-4"><strong>Estatus:</strong> <span id="indStatus"></span></p>
-          <p><strong>Red:</strong> <span id="indNet"></span></p>
+          <p><strong>Red y Operadora:</strong> <span id="indNetOp" class="text-purple-600 font-bold"></span></p>
           <p><strong>Batería:</strong> <span id="indBat"></span></p>
-          <p><strong>Estado:</strong> <span id="indState"></span></p>
+          <p><strong>Estado (Geográfico):</strong> <span id="indState"></span></p>
+          <div class="mt-4 border-t pt-2">
+            <p class="font-bold text-gray-700 mb-1">Apps Instaladas y Versiones:</p>
+            <ul id="indAppsList" class="list-disc pl-5 text-sm text-gray-600 space-y-1"></ul>
+          </div>
         </div>
         <div class="bg-white p-2 rounded shadow flex flex-col h-96">
           <h3 class="text-lg font-bold text-gray-700 ml-4 mt-2">Ubicación Exacta</h3>
@@ -186,10 +189,16 @@
     let depMenuOpen = false;
     let progressTimer = null; 
 
+    // Formateador de números (ej: 1234 -> 1.234)
+    function fmtNum(num) {
+      return Number(num).toLocaleString('es-VE');
+    }
+
     const bancosConocidos = ["BANESCO", "MERCANTIL", "PROVINCIAL", "VENEZUELA", "BANCARIBE", "CARONI", "TESORO", "BICENTENARIO", "PLAZA", "EXTERIOR", "ACTIVO", "BANCAMIGA", "BANCRECER", "BANPLUS", "BNC", "SOFITASA", "DEL SUR", "NACIONAL DE CREDITO"];
 
+    // CORRECCIÓN MAPA: Amazonas es VE-Z y Vargas es VE-X
     const vzlaStates = [
-      { name: "Amazonas", iso: "VE-X", lat: 3.5, lng: -66.0 }, { name: "Anzoátegui", iso: "VE-B", lat: 9.0, lng: -64.3 },
+      { name: "Amazonas", iso: "VE-Z", lat: 3.5, lng: -66.0 }, { name: "Anzoátegui", iso: "VE-B", lat: 9.0, lng: -64.3 },
       { name: "Apure", iso: "VE-C", lat: 7.1, lng: -68.8 }, { name: "Aragua", iso: "VE-D", lat: 10.0, lng: -67.4 },
       { name: "Barinas", iso: "VE-E", lat: 8.0, lng: -69.8 }, { name: "Bolívar", iso: "VE-F", lat: 6.3, lng: -63.5 },
       { name: "Carabobo", iso: "VE-G", lat: 10.2, lng: -67.9 }, { name: "Cojedes", iso: "VE-H", lat: 9.3, lng: -68.3 },
@@ -199,7 +208,7 @@
       { name: "Monagas", iso: "VE-N", lat: 9.4, lng: -63.0 }, { name: "Nueva Esparta", iso: "VE-O", lat: 11.0, lng: -64.0 },
       { name: "Portuguesa", iso: "VE-P", lat: 9.1, lng: -69.3 }, { name: "Sucre", iso: "VE-R", lat: 10.5, lng: -63.2 },
       { name: "Táchira", iso: "VE-S", lat: 7.8, lng: -72.0 }, { name: "Trujillo", iso: "VE-T", lat: 9.3, lng: -70.5 },
-      { name: "Vargas", iso: "VE-W", lat: 10.6, lng: -66.9 }, { name: "Yaracuy", iso: "VE-U", lat: 10.3, lng: -68.7 },
+      { name: "Vargas", iso: "VE-X", lat: 10.6, lng: -66.9 }, { name: "Yaracuy", iso: "VE-U", lat: 10.3, lng: -68.7 },
       { name: "Zulia", iso: "VE-V", lat: 9.9, lng: -72.2 }, { name: "Distrito Capital", iso: "VE-A", lat: 10.5, lng: -66.9 }
     ];
 
@@ -213,54 +222,34 @@
       return minD > 15 ? { name: "Fuera de Venezuela", iso: null } : st; 
     }
 
-    // Funciones Actualizadas de Clasificación
     function extractBank(dep) {
       if(!dep) return "Sin Banco";
       dep = dep.toUpperCase();
-      for(let b of bancosConocidos) {
-        if(dep.includes(b)) return b;
-      }
+      for(let b of bancosConocidos) { if(dep.includes(b)) return b; }
       return "Sin Banco Identificado";
     }
 
     function extractOwnership(dep) {
       if(!dep) return "Desconocido";
       dep = dep.toUpperCase();
-      
-      // Si incluye VATC o VAT, es propiedad de VATC
       if(dep.includes("VATC") || dep.includes("VAT")) return "VATC";
-      
-      // Si incluye PLATCO, es propiedad de PLATCO
       if(dep.includes("PLATCO")) return "PLATCO";
-      
-      // Si no es ninguno de los anteriores, verificamos si contiene el nombre de un banco
       let bank = extractBank(dep);
-      if(bank !== "Sin Banco" && bank !== "Sin Banco Identificado") {
-        return bank; // El banco ES el propietario (ej. CARONI)
-      }
-      
+      if(bank !== "Sin Banco" && bank !== "Sin Banco Identificado") return bank; 
       return "Otro";
     }
 
-    // Animación de Progreso
     function startProgressAnimation(isConsolidating) {
-      let pb = document.getElementById('progressBar');
-      let pc = document.getElementById('progressCount');
-      let pt = document.getElementById('progressText');
-      
-      let progress = 5; 
-      let maxFakeProgress = 85; 
-      let stepTime = isConsolidating ? 1500 : 800; 
+      let pb = document.getElementById('progressBar'), pc = document.getElementById('progressCount'), pt = document.getElementById('progressText');
+      let progress = 5, maxFakeProgress = 85, stepTime = isConsolidating ? 1500 : 800; 
 
       progressTimer = setInterval(() => {
         if(progress < maxFakeProgress) {
           progress += Math.floor(Math.random() * 5) + 1; 
           if(progress > maxFakeProgress) progress = maxFakeProgress;
-          pb.style.width = progress + '%';
-          pc.innerText = progress + '%';
-          
+          pb.style.width = progress + '%'; pc.innerText = progress + '%';
           if(progress > 20 && progress < 50) pt.innerText = 'Transfiriendo paquete de datos...';
-          else if (progress >= 50 && progress < 75) pt.innerText = 'Procesando coordenadas y deployments...';
+          else if (progress >= 50 && progress < 75) pt.innerText = 'Procesando coordenadas espaciales...';
           else if (progress >= 75) pt.innerText = 'Construyendo dashboard operativo...';
         }
       }, stepTime);
@@ -284,8 +273,7 @@
     };
 
     async function startDataStream(forceConsolidate = false) {
-      let btnSync = document.getElementById('btnSync');
-      let btnCons = document.getElementById('btnConsolidate');
+      let btnSync = document.getElementById('btnSync'), btnCons = document.getElementById('btnConsolidate');
       btnSync.disabled = true; btnCons.disabled = true;
 
       document.getElementById('errorPanel').style.display = 'none';
@@ -294,7 +282,7 @@
       
       document.getElementById('progressBar').style.width = '2%';
       document.getElementById('progressCount').innerText = '2%';
-      document.getElementById('progressText').innerText = forceConsolidate ? 'Escaneando hojas de Excel en Google Drive...' : 'Conectando con la base principal...';
+      document.getElementById('progressText').innerText = forceConsolidate ? 'Escaneando carpetas en Google Drive...' : 'Conectando con la base principal...';
 
       startProgressAnimation(forceConsolidate);
 
@@ -316,7 +304,6 @@
 
         rawData = result.data || [];
         
-        // Asignar nuevas propiedades calculadas
         rawData.forEach(item => {
           item.estadoInfo = { name: "Desconocido", iso: null };
           if(item.loc) {
@@ -328,12 +315,9 @@
         });
 
         stopProgressAnimation();
-        
-        if(result.updatedAt) {
-          document.getElementById('lastUpdateText').innerText = `Última actualización: ${result.updatedAt}`;
-        }
+        if(result.updatedAt) document.getElementById('lastUpdateText').innerText = `Última actualización: ${result.updatedAt}`;
 
-        populateFilters();
+        populatePropiedadFilter(); // Cargamos solo el filtro maestro inicialmente
         applyFilters();
 
         setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 1500);
@@ -341,28 +325,40 @@
         if(progressTimer) clearInterval(progressTimer);
         document.getElementById('errorPanel').style.display = 'block';
         document.getElementById('errorMessage').innerText = err.message;
-      } finally {
-        btnSync.disabled = false; btnCons.disabled = false;
-      }
+      } finally { btnSync.disabled = false; btnCons.disabled = false; }
     }
 
-    // Llenado dinámico de filtros al cargar
-    function populateFilters() {
-      let mSet = new Set(), bSet = new Set(), pSet = new Set(), eSet = new Set(), dSet = new Set();
+    // Funciones Lógica en Cascada
+    function populatePropiedadFilter() {
+      let pSet = new Set();
+      rawData.forEach(i => { if(i.propiedad) pSet.add(i.propiedad); });
+      fillSelect('filterPropiedad', Array.from(pSet).sort(), "Propiedad");
+    }
+
+    function onPropiedadChange() {
+      // 1. Obtener la propiedad seleccionada
+      let selectedProp = document.getElementById('filterPropiedad').value;
+      
+      // 2. Filtrar las opciones disponibles en el RESTO de los filtros basándonos SOLO en esa propiedad
+      let bSet = new Set(), mSet = new Set(), eSet = new Set(), dSet = new Set();
+      
       rawData.forEach(i => {
-        if(i.model) mSet.add(i.model);
-        if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco);
-        if(i.propiedad) pSet.add(i.propiedad);
-        if(i.estadoInfo.name) eSet.add(i.estadoInfo.name);
-        if(i.deployment) dSet.add(i.deployment);
+        if(selectedProp === "All" || i.propiedad === selectedProp) {
+          if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco);
+          if(i.model) mSet.add(i.model);
+          if(i.estadoInfo.name) eSet.add(i.estadoInfo.name);
+          if(i.deployment) dSet.add(i.deployment);
+        }
       });
 
-      fillSelect('filterModel', Array.from(mSet).sort(), "Modelo");
+      // 3. Re-poblar los filtros secundarios y dejarlos en "All"
       fillSelect('filterBanco', Array.from(bSet).sort(), "Banco");
-      fillSelect('filterPropiedad', Array.from(pSet).sort(), "Propiedad");
+      fillSelect('filterModel', Array.from(mSet).sort(), "Modelo");
       fillSelect('filterState', Array.from(eSet).sort(), "Estado");
-
-      // Construir menú Multi-Select de Deployment
+      
+      // Re-construir Deployments
+      selectedDeps.clear();
+      document.getElementById('depBtnText').innerText = "Deployment (Todos)";
       let depContainer = document.getElementById('depMenuContainer');
       let dHtml = '';
       Array.from(dSet).sort().forEach(dep => {
@@ -373,22 +369,26 @@
           </label>`;
       });
       depContainer.innerHTML = dHtml;
+
+      // 4. Aplicar el filtro a la data y los gráficos
+      applyFilters();
     }
 
-    function toggleDepMenu() {
-      let menu = document.getElementById('depMenuContainer');
-      depMenuOpen = !depMenuOpen;
-      menu.style.display = depMenuOpen ? 'block' : 'none';
-    }
-
-    document.addEventListener('click', function(event) {
-      let btn = document.getElementById('btnDepMenu');
-      let menu = document.getElementById('depMenuContainer');
-      if (depMenuOpen && !btn.contains(event.target) && !menu.contains(event.target)) {
-        depMenuOpen = false;
-        menu.style.display = 'none';
+    function handleNetChange() {
+      let netSelect = document.getElementById('filterNet').value;
+      let opSelect = document.getElementById('filterOperadora');
+      
+      // Filtro Operadora SOLO activo si se selecciona 4G
+      if(netSelect && netSelect.toUpperCase().includes("4G")) {
+        opSelect.disabled = false;
+        opSelect.classList.remove("bg-gray-100");
+      } else {
+        opSelect.value = "All"; // Resetear
+        opSelect.disabled = true;
+        opSelect.classList.add("bg-gray-100");
       }
-    });
+      applyFilters();
+    }
 
     function handleDepSelect(checkbox) {
       if(checkbox.checked) selectedDeps.add(checkbox.value);
@@ -398,8 +398,27 @@
       if(selectedDeps.size === 0) btnTxt.innerText = "Deployment (Todos)";
       else if(selectedDeps.size === 1) btnTxt.innerText = "1 Seleccionado";
       else btnTxt.innerText = `${selectedDeps.size} Seleccionados`;
-      
       applyFilters();
+    }
+
+    function toggleDepMenu() {
+      let menu = document.getElementById('depMenuContainer');
+      depMenuOpen = !depMenuOpen;
+      menu.style.display = depMenuOpen ? 'block' : 'none';
+    }
+
+    document.addEventListener('click', function(event) {
+      let btn = document.getElementById('btnDepMenu'), menu = document.getElementById('depMenuContainer');
+      if (depMenuOpen && !btn.contains(event.target) && !menu.contains(event.target)) {
+        depMenuOpen = false; menu.style.display = 'none';
+      }
+    });
+
+    function fillSelect(id, values, label) {
+      let sel = document.getElementById(id);
+      let html = `<option value="All">${label} (Todos)</option>`;
+      values.forEach(v => { if(v) html += `<option value="${v}">${v}</option>`; });
+      sel.innerHTML = html;
     }
 
     function applyFilters() {
@@ -408,6 +427,7 @@
       const fProc = document.getElementById('filterProc').value;
       const fStat = document.getElementById('filterStatus').value;
       const fNet = document.getElementById('filterNet').value;
+      const fOp = document.getElementById('filterOperadora').value;
       const fMod = document.getElementById('filterModel').value;
       const fState = document.getElementById('filterState').value;
       
@@ -417,29 +437,23 @@
                (fProc === "All" || i.proc === fProc) &&
                (fStat === "All" || i.status === fStat) &&
                (fNet === "All" || (i.net && i.net.toUpperCase().includes(fNet))) &&
+               (fOp === "All" || i.operadora === fOp) &&
                (fMod === "All" || i.model === fMod) &&
                (fState === "All" || i.estadoInfo.name === fState) &&
                (selectedDeps.size === 0 || selectedDeps.has(i.deployment));
       });
 
-      document.getElementById('kpiTotal').innerText = filtered.length;
-      document.getElementById('kpiActive').innerText = filtered.filter(d => d.status === "Activated").length;
-      document.getElementById('kpiBattery').innerText = filtered.filter(d => parseInt(d.bat) < 20).length;
+      // SEPARADORES DE MILES
+      document.getElementById('kpiTotal').innerText = fmtNum(filtered.length);
+      document.getElementById('kpiActive').innerText = fmtNum(filtered.filter(d => d.status === "Activated").length);
+      document.getElementById('kpiBattery').innerText = fmtNum(filtered.filter(d => parseInt(d.bat) < 20).length);
 
       drawTableAndGeoChart(filtered);
       updateInteractiveCharts(filtered);
     }
 
-    function fillSelect(id, values, label) {
-      let sel = document.getElementById(id);
-      let html = `<option value="All">${label} (Todos)</option>`;
-      values.forEach(v => { if(v) html += `<option value="${v}">${v}</option>`; });
-      sel.innerHTML = html;
-    }
-
     function drawTableAndGeoChart(data) {
-      let totals = {};
-      let maxCount = 0;
+      let totals = {}, maxCount = 0;
 
       data.forEach(d => {
         let stName = d.estadoInfo.name;
@@ -452,7 +466,8 @@
       let tHtml = "";
       let sortedStates = Object.keys(totals).sort((a,b) => totals[b].count - totals[a].count);
       sortedStates.forEach(s => {
-        tHtml += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-medium text-gray-700">${s}</td><td class="p-2 text-blue-600 font-bold text-right">${totals[s].count}</td></tr>`;
+        // Formateo con separador de miles
+        tHtml += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-medium text-gray-700">${s}</td><td class="p-2 text-blue-600 font-bold text-right">${fmtNum(totals[s].count)}</td></tr>`;
       });
       tbody.innerHTML = tHtml;
 
@@ -527,9 +542,29 @@
       document.getElementById('indModel').innerText = t.model || 'N/A';
       document.getElementById('indSN').innerText = t.sn || 'N/A';
       document.getElementById('indStatus').innerText = t.status || 'N/A';
-      document.getElementById('indNet').innerText = t.net || 'N/A';
+      
+      let netOpStr = t.net || 'N/A';
+      if(t.net && t.net.toUpperCase().includes("4G") && t.operadora && t.operadora !== "Desconocido") {
+        netOpStr += ` (${t.operadora})`;
+      }
+      document.getElementById('indNetOp').innerText = netOpStr;
+      
       document.getElementById('indBat').innerText = t.bat || 'N/A';
       document.getElementById('indState').innerText = t.estadoInfo ? t.estadoInfo.name : 'N/A';
+
+      // Tratamiento limpio para las APPS (Viñetas)
+      let appsContainer = document.getElementById('indAppsList');
+      appsContainer.innerHTML = '';
+      if(t.apps) {
+        let appArray = t.apps.split(" | ");
+        appArray.forEach(app => {
+          let li = document.createElement('li');
+          li.innerText = app;
+          appsContainer.appendChild(li);
+        });
+      } else {
+        appsContainer.innerHTML = '<li>Sin aplicativos registrados</li>';
+      }
 
       document.getElementById('terminalCard').style.display = 'grid';
 
