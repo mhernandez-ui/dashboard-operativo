@@ -60,11 +60,13 @@
     <!-- VISTA 1: DASHBOARD GENERAL -->
     <div id="viewGeneral">
       
-      <!-- Filtros -->
+      <!-- Fila de Filtros Principales -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad (Filtro Maestro)</label>
-          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()"><option value="All">Propiedad (Todas)</option></select>
+          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()">
+            <option value="All">Propiedad (Todas)</option>
+          </select>
         </div>
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Entidad Bancaria</label>
@@ -80,7 +82,8 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <!-- Fila de Filtros Secundarios (Se eliminó Estado) -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Red y Conexión</label>
           <select id="filterNet" class="p-2 border rounded shadow-sm outline-none" onchange="handleNetChange()"><option value="All">Red (Todas)</option><option value="WIFI">WIFI</option><option value="4G">4G</option></select>
@@ -95,10 +98,6 @@
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Modelo de POS</label>
           <select id="filterModel" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Modelo (Todos)</option></select>
         </div>
-        <div class="flex flex-col">
-          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Estado Geográfico</label>
-          <select id="filterState" class="p-2 border rounded shadow-sm outline-none" onchange="applyFilters()"><option value="All">Estado (Todos)</option></select>
-        </div>
         <div class="flex flex-col relative">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Deployment Detallado</label>
           <button id="btnDepMenu" onclick="toggleDepMenu()" class="w-full p-2 border rounded shadow-sm outline-none bg-white text-left flex justify-between items-center text-sm">
@@ -108,14 +107,14 @@
         </div>
       </div>
 
-      <!-- 6 KPIs de Alto Nivel -->
-      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <div class="bg-white p-3 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-xl font-bold">0</p></div>
-        <div class="bg-white p-3 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Activos</h3><p id="kpiActive" class="text-xl font-bold text-green-600">0</p></div>
-        <div class="bg-white p-3 rounded shadow border-l-4 border-emerald-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase whitespace-nowrap">En Línea <span id="lblRefDate" class="text-[9px] text-gray-400"></span></h3><p id="kpiOnline" class="text-xl font-bold text-emerald-600">0</p></div>
-        <div class="bg-white p-3 rounded shadow border-l-4 border-orange-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Inactivos > 30 Días</h3><p id="kpiInactive30" class="text-xl font-bold text-orange-600">0</p></div>
-        <div class="bg-white p-3 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Hardware</h3><p id="kpiHardware" class="text-xl font-bold text-red-600">0</p></div>
-        <div class="bg-white p-3 rounded shadow border-l-4 border-purple-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Software</h3><p id="kpiSoftware" class="text-xl font-bold text-purple-600">0</p></div>
+      <!-- 6 KPIs (Organizados en 3 columnas = 2 Filas de 3) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-2xl font-bold">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Activos</h3><p id="kpiActive" class="text-2xl font-bold text-green-600">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-emerald-500"><h3 class="text-gray-500 text-xs font-bold uppercase whitespace-nowrap">En Línea <span id="lblRefDate" class="text-[10px] text-gray-400"></span></h3><p id="kpiOnline" class="text-2xl font-bold text-emerald-600">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-orange-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Inactivos > 30 Días</h3><p id="kpiInactive30" class="text-2xl font-bold text-orange-600">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Alertas Hardware</h3><p id="kpiHardware" class="text-2xl font-bold text-red-600">0</p></div>
+        <div class="bg-white p-4 rounded shadow border-l-4 border-purple-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Alertas Software</h3><p id="kpiSoftware" class="text-2xl font-bold text-purple-600">0</p></div>
       </div>
 
       <!-- Gráficos -->
@@ -127,10 +126,10 @@
 
       <!-- Mapa y Tablas -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div class="col-span-1 md:col-span-2 bg-white p-4 rounded shadow">
+        <div class="col-span-1 md:col-span-2 bg-white p-4 rounded shadow relative">
           <div class="flex justify-between items-center mb-2">
-            <h2 class="text-sm font-bold text-gray-700 uppercase">Densidad (Click para filtrar)</h2>
-            <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-1 rounded">Mapa Interactivo</span>
+            <h2 class="text-sm font-bold text-gray-700 uppercase">Densidad <span id="mapFilterLabel" class="text-blue-600 ml-1">(Todos)</span></h2>
+            <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-1 rounded">Haz clic en un Estado para filtrar</span>
           </div>
           <div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center cursor-pointer"></div>
         </div>
@@ -193,7 +192,10 @@
     let chartPropInst, chartOpInst, chartModInst;
     let selectedDeps = new Set();
     let depMenuOpen = false, progressTimer = null; 
-    let masterDateRef = new Date(0); // Para calcular "En Línea Hoy"
+    let masterDateRef = new Date(0);
+    
+    // Nueva variable global para el filtro del mapa interactivo
+    let currentFilterState = "All";
 
     function fmtNum(num) { return Number(num).toLocaleString('es-VE'); }
 
@@ -298,7 +300,7 @@
         }
 
         rawData = result.data || [];
-        masterDateRef = new Date(0); // Resetear fecha de referencia
+        masterDateRef = new Date(0); 
 
         rawData.forEach(item => {
           item.estadoInfo = { name: "Desconocido", iso: null };
@@ -309,7 +311,6 @@
           item.propiedad = extractOwnership(item.deployment);
           item.banco = extractBank(item.deployment);
 
-          // Extraer la fecha más reciente de la data para el KPI "En Línea"
           if(item.online) {
             let dDate = new Date(item.online);
             if(dDate > masterDateRef && dDate <= new Date()) masterDateRef = dDate;
@@ -334,6 +335,8 @@
 
     function resetFilters() {
       document.getElementById('filterPropiedad').value = "All";
+      currentFilterState = "All"; // Resetear el estado del mapa
+      document.getElementById('mapFilterLabel').innerText = "(Todos)";
       onPropiedadChange(); 
     }
 
@@ -346,19 +349,17 @@
     function onPropiedadChange() {
       let selectedProp = document.getElementById('filterPropiedad').value;
       
-      let bSet = new Set(), mSet = new Set(), eSet = new Set(), dSet = new Set();
+      let bSet = new Set(), mSet = new Set(), dSet = new Set();
       rawData.forEach(i => {
         if(selectedProp === "All" || i.propiedad === selectedProp) {
           if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco);
           if(i.model) mSet.add(i.model);
-          if(i.estadoInfo.name) eSet.add(i.estadoInfo.name);
           if(i.deployment) dSet.add(i.deployment);
         }
       });
 
       fillSelect('filterBanco', Array.from(bSet).sort(), "Banco");
       fillSelect('filterModel', Array.from(mSet).sort(), "Modelo");
-      fillSelect('filterState', Array.from(eSet).sort(), "Estado");
       
       selectedDeps.clear();
       document.getElementById('depBtnText').innerText = "Deployment (Todos)";
@@ -428,7 +429,6 @@
       const fNet = document.getElementById('filterNet').value;
       const fOp = document.getElementById('filterOperadora').value;
       const fMod = document.getElementById('filterModel').value;
-      const fState = document.getElementById('filterState').value;
       
       let activosHoy = 0, inactivos30 = 0, hwAlerts = 0, swAlerts = 0;
 
@@ -440,11 +440,10 @@
                (fNet === "All" || (i.net && i.net.toUpperCase().includes(fNet))) &&
                (fOp === "All" || i.operadora === fOp) &&
                (fMod === "All" || i.model === fMod) &&
-               (fState === "All" || i.estadoInfo.name === fState) &&
+               (currentFilterState === "All" || i.estadoInfo.name === currentFilterState) && // Filtro de Mapa
                (selectedDeps.size === 0 || selectedDeps.has(i.deployment));
         
         if (ok) {
-          // KPI Lógica
           if(i.online) {
             let dDate = new Date(i.online);
             if(dDate.toDateString() === masterDateRef.toDateString()) activosHoy++;
@@ -455,7 +454,6 @@
           let bat = parseInt(i.bat);
           let prnt = i.printer ? i.printer.toLowerCase() : "ok";
           if((!isNaN(bat) && bat < 20) || (prnt !== "ok" && prnt !== "normal" && prnt !== "")) hwAlerts++;
-
           if(!i.apps || i.apps === "" || i.apps.includes("(v?)")) swAlerts++;
         }
         return ok;
@@ -516,14 +514,19 @@
         };
         let chart = new google.visualization.GeoChart(document.getElementById('mapGeneral'));
         
-        // INTERACTIVIDAD: Click-to-Filter
+        // INTERACTIVIDAD DEL MAPA
         google.visualization.events.addListener(chart, 'select', function() {
           let selection = chart.getSelection();
           if (selection.length > 0) {
             let stateName = dataTable.getValue(selection[0].row, 1);
-            document.getElementById('filterState').value = stateName;
-            applyFilters();
+            currentFilterState = stateName;
+            document.getElementById('mapFilterLabel').innerText = `(${stateName})`;
+          } else {
+            // Si el usuario vuelve a hacer clic en el mismo estado para desseleccionarlo
+            currentFilterState = "All";
+            document.getElementById('mapFilterLabel').innerText = "(Todos)";
           }
+          applyFilters();
         });
 
         chart.draw(dataTable, options);
@@ -555,9 +558,18 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
 
+      // LÓGICA DE COLORES EXACTOS PARA OPERADORAS
+      let opLabels = Object.keys(opCnt);
+      let opColors = opLabels.map(op => {
+        if(op === 'Movistar') return '#3b82f6'; // Azul
+        if(op === 'Digitel') return '#ef4444'; // Rojo
+        if(op === 'Movilnet') return '#22c55e'; // Verde
+        return '#cbd5e1'; // Gris para "Desconocido" u otros
+      });
+
       chartOpInst = new Chart(document.getElementById('chartOperadoras'), {
         type: 'doughnut',
-        data: { labels: Object.keys(opCnt), datasets: [{ data: Object.values(opCnt), backgroundColor: ['#22c55e', '#3b82f6', '#ef4444'] }] },
+        data: { labels: opLabels, datasets: [{ data: Object.values(opCnt), backgroundColor: opColors }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
       });
     }
