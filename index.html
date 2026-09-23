@@ -10,19 +10,16 @@
     .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
     .table-container { max-height: 400px; overflow-y: auto; }
     iframe { border-radius: 0.5rem; }
-    
     .progress-striped {
       background-image: linear-gradient(45deg, rgba(255,255,255,.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.2) 75%, transparent 75%, transparent);
-      background-size: 1rem 1rem;
-      animation: stripemove 1s linear infinite;
-      transition: width 0.4s ease;
+      background-size: 1rem 1rem; animation: stripemove 1s linear infinite; transition: width 0.4s ease;
     }
     @keyframes stripemove { from { background-position: 1rem 0; } to { background-position: 0 0; } }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans p-6">
+<body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
 
   <!-- Header -->
   <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-4 rounded shadow border border-gray-200 gap-4">
@@ -41,11 +38,9 @@
   </div>
 
   <div id="errorPanel" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-6 rounded shadow text-sm">
-    <p class="font-bold">Avisos del Sistema:</p>
-    <div id="errorMessage"></div>
+    <p class="font-bold">Avisos del Sistema:</p><div id="errorMessage"></div>
   </div>
 
-  <!-- Panel de Progreso -->
   <div id="progressPanel" class="hidden bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500">
     <div class="flex justify-between mb-2">
       <span id="progressText" class="text-sm font-bold text-gray-700">Conectando...</span>
@@ -65,13 +60,11 @@
     <!-- VISTA 1: DASHBOARD GENERAL -->
     <div id="viewGeneral">
       
-      <!-- Fila de Filtros Principales -->
+      <!-- Filtros -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad (Filtro Maestro)</label>
-          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()">
-            <option value="All">Propiedad (Todas)</option>
-          </select>
+          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()"><option value="All">Propiedad (Todas)</option></select>
         </div>
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Entidad Bancaria</label>
@@ -87,7 +80,6 @@
         </div>
       </div>
 
-      <!-- Fila de Filtros Secundarios -->
       <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Red y Conexión</label>
@@ -116,15 +108,17 @@
         </div>
       </div>
 
-      <!-- KPIs (Ahora son 4) -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white p-4 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-2xl font-bold">0</p></div>
-        <div class="bg-white p-4 rounded shadow border-l-4 border-emerald-500"><h3 class="text-gray-500 text-xs font-bold uppercase">En Línea (Hoy)</h3><p id="kpiOnline" class="text-2xl font-bold text-emerald-600">0</p></div>
-        <div class="bg-white p-4 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Activos</h3><p id="kpiActive" class="text-2xl font-bold text-green-600">0</p></div>
-        <div class="bg-white p-4 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-xs font-bold uppercase">Batería &lt; 20%</h3><p id="kpiBattery" class="text-2xl font-bold text-red-600">0</p></div>
+      <!-- 6 KPIs de Alto Nivel -->
+      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <div class="bg-white p-3 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-xl font-bold">0</p></div>
+        <div class="bg-white p-3 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Activos</h3><p id="kpiActive" class="text-xl font-bold text-green-600">0</p></div>
+        <div class="bg-white p-3 rounded shadow border-l-4 border-emerald-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase whitespace-nowrap">En Línea <span id="lblRefDate" class="text-[9px] text-gray-400"></span></h3><p id="kpiOnline" class="text-xl font-bold text-emerald-600">0</p></div>
+        <div class="bg-white p-3 rounded shadow border-l-4 border-orange-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Inactivos > 30 Días</h3><p id="kpiInactive30" class="text-xl font-bold text-orange-600">0</p></div>
+        <div class="bg-white p-3 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Hardware</h3><p id="kpiHardware" class="text-xl font-bold text-red-600">0</p></div>
+        <div class="bg-white p-3 rounded shadow border-l-4 border-purple-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Software</h3><p id="kpiSoftware" class="text-xl font-bold text-purple-600">0</p></div>
       </div>
 
-      <!-- Gráficos (Matriz 2x2 para acomodar Modelos y Operadoras) -->
+      <!-- Gráficos -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Propiedad de Equipos</h3><div class="w-full h-48"><canvas id="chartPropiedad"></canvas></div></div>
         <div class="bg-white p-4 rounded shadow md:col-span-2"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Top Modelos</h3><div class="w-full h-48"><canvas id="chartModelos"></canvas></div></div>
@@ -133,17 +127,17 @@
 
       <!-- Mapa y Tablas -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <!-- Mapa ocupa 2 columnas -->
         <div class="col-span-1 md:col-span-2 bg-white p-4 rounded shadow">
-          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2">Densidad Geográfica (Google GeoChart)</h2>
-          <div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center"></div>
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-sm font-bold text-gray-700 uppercase">Densidad (Click para filtrar)</h2>
+            <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-1 rounded">Mapa Interactivo</span>
+          </div>
+          <div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center cursor-pointer"></div>
         </div>
-        <!-- Tabla de Estados -->
         <div class="col-span-1 bg-white p-4 rounded shadow table-container">
           <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 sticky top-0 bg-white border-b pb-2">Ranking por Estado</h2>
           <table class="w-full text-left text-sm mt-2"><tbody id="stateTableBody"></tbody></table>
         </div>
-        <!-- Tabla de Deployments -->
         <div class="col-span-1 bg-white p-4 rounded shadow table-container">
           <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 sticky top-0 bg-white border-b pb-2">Detalle por Deployment</h2>
           <table class="w-full text-left text-sm mt-2"><tbody id="depTableBody"></tbody></table>
@@ -175,7 +169,7 @@
           <p class="mt-4"><strong>Estatus:</strong> <span id="indStatus"></span></p>
           <p><strong>Última Conexión:</strong> <span id="indOnline"></span></p>
           <p><strong>Red y Operadora:</strong> <span id="indNetOp" class="text-purple-600 font-bold"></span></p>
-          <p><strong>Batería:</strong> <span id="indBat"></span></p>
+          <p><strong>Batería y Hardware:</strong> <span id="indBat"></span></p>
           <p><strong>Estado (Geográfico):</strong> <span id="indState"></span></p>
           <div class="mt-4 border-t pt-2">
             <p class="font-bold text-gray-700 mb-1">Apps Instaladas y Versiones:</p>
@@ -198,12 +192,10 @@
     let chartsLoaded = false;
     let chartPropInst, chartOpInst, chartModInst;
     let selectedDeps = new Set();
-    let depMenuOpen = false;
-    let progressTimer = null; 
+    let depMenuOpen = false, progressTimer = null; 
+    let masterDateRef = new Date(0); // Para calcular "En Línea Hoy"
 
-    function fmtNum(num) {
-      return Number(num).toLocaleString('es-VE');
-    }
+    function fmtNum(num) { return Number(num).toLocaleString('es-VE'); }
 
     const bancosConocidos = ["BANESCO", "MERCANTIL", "PROVINCIAL", "VENEZUELA", "BANCARIBE", "CARONI", "TESORO", "BICENTENARIO", "PLAZA", "EXTERIOR", "ACTIVO", "BANCAMIGA", "BANCRECER", "BANPLUS", "BNC", "SOFITASA", "DEL SUR", "NACIONAL DE CREDITO"];
 
@@ -276,7 +268,7 @@
       google.charts.setOnLoadCallback(() => {
          chartsLoaded = true;
          document.getElementById('btnConsolidate').disabled = false;
-         startDataStream(false); // Carga Automática inicial
+         startDataStream(false);
       });
     };
 
@@ -287,7 +279,6 @@
       document.getElementById('errorPanel').style.display = 'none';
       document.getElementById('progressPanel').style.display = 'block';
       document.getElementById('mainContainer').style.display = 'block';
-      
       document.getElementById('progressBar').style.width = '2%';
       document.getElementById('progressCount').innerText = '2%';
       document.getElementById('progressText').innerText = forceConsolidate ? 'Escaneando carpetas en Google Drive...' : 'Conectando con la base principal...';
@@ -302,16 +293,13 @@
         let result = await response.json();
         
         if (!result.success) {
-          if (result.needsConsolidation) {
-            stopProgressAnimation();
-            startDataStream(true);
-            return;
-          }
+          if (result.needsConsolidation) { stopProgressAnimation(); startDataStream(true); return; }
           throw new Error(result.error);
         }
 
         rawData = result.data || [];
-        
+        masterDateRef = new Date(0); // Resetear fecha de referencia
+
         rawData.forEach(item => {
           item.estadoInfo = { name: "Desconocido", iso: null };
           if(item.loc) {
@@ -320,10 +308,18 @@
           }
           item.propiedad = extractOwnership(item.deployment);
           item.banco = extractBank(item.deployment);
+
+          // Extraer la fecha más reciente de la data para el KPI "En Línea"
+          if(item.online) {
+            let dDate = new Date(item.online);
+            if(dDate > masterDateRef && dDate <= new Date()) masterDateRef = dDate;
+          }
         });
 
         stopProgressAnimation();
+        
         if(result.updatedAt) document.getElementById('lastUpdateText').innerText = `Última actualización: ${result.updatedAt}`;
+        document.getElementById('lblRefDate').innerText = `(Ref: ${masterDateRef.toLocaleDateString('es-VE')})`;
 
         populatePropiedadFilter();
         applyFilters();
@@ -338,7 +334,7 @@
 
     function resetFilters() {
       document.getElementById('filterPropiedad').value = "All";
-      onPropiedadChange(); // Esto reinicia el resto
+      onPropiedadChange(); 
     }
 
     function populatePropiedadFilter() {
@@ -377,12 +373,10 @@
       });
       depContainer.innerHTML = dHtml;
 
-      // Reseteamos menús individuales
       document.getElementById('filterProc').value = "All";
       document.getElementById('filterStatus').value = "All";
       document.getElementById('filterNet').value = "All";
       handleNetChange(); 
-
       applyFilters();
     }
 
@@ -391,20 +385,15 @@
       let opSelect = document.getElementById('filterOperadora');
       
       if(netSelect && netSelect.toUpperCase().includes("4G")) {
-        opSelect.disabled = false;
-        opSelect.classList.remove("bg-gray-100");
+        opSelect.disabled = false; opSelect.classList.remove("bg-gray-100");
       } else {
-        opSelect.value = "All"; 
-        opSelect.disabled = true;
-        opSelect.classList.add("bg-gray-100");
+        opSelect.value = "All"; opSelect.disabled = true; opSelect.classList.add("bg-gray-100");
       }
       applyFilters();
     }
 
     function handleDepSelect(checkbox) {
-      if(checkbox.checked) selectedDeps.add(checkbox.value);
-      else selectedDeps.delete(checkbox.value);
-      
+      if(checkbox.checked) selectedDeps.add(checkbox.value); else selectedDeps.delete(checkbox.value);
       let btnTxt = document.getElementById('depBtnText');
       if(selectedDeps.size === 0) btnTxt.innerText = "Deployment (Todos)";
       else if(selectedDeps.size === 1) btnTxt.innerText = "1 Seleccionado";
@@ -414,8 +403,7 @@
 
     function toggleDepMenu() {
       let menu = document.getElementById('depMenuContainer');
-      depMenuOpen = !depMenuOpen;
-      menu.style.display = depMenuOpen ? 'block' : 'none';
+      depMenuOpen = !depMenuOpen; menu.style.display = depMenuOpen ? 'block' : 'none';
     }
 
     document.addEventListener('click', function(event) {
@@ -442,8 +430,10 @@
       const fMod = document.getElementById('filterModel').value;
       const fState = document.getElementById('filterState').value;
       
+      let activosHoy = 0, inactivos30 = 0, hwAlerts = 0, swAlerts = 0;
+
       let filtered = rawData.filter(i => {
-        return (fProp === "All" || i.propiedad === fProp) &&
+        let ok = (fProp === "All" || i.propiedad === fProp) &&
                (fBanc === "All" || i.banco === fBanc) &&
                (fProc === "All" || i.proc === fProc) &&
                (fStat === "All" || i.status === fStat) &&
@@ -452,20 +442,31 @@
                (fMod === "All" || i.model === fMod) &&
                (fState === "All" || i.estadoInfo.name === fState) &&
                (selectedDeps.size === 0 || selectedDeps.has(i.deployment));
+        
+        if (ok) {
+          // KPI Lógica
+          if(i.online) {
+            let dDate = new Date(i.online);
+            if(dDate.toDateString() === masterDateRef.toDateString()) activosHoy++;
+            let diffDays = (masterDateRef - dDate) / (1000 * 3600 * 24);
+            if(diffDays > 30) inactivos30++;
+          } else { inactivos30++; }
+
+          let bat = parseInt(i.bat);
+          let prnt = i.printer ? i.printer.toLowerCase() : "ok";
+          if((!isNaN(bat) && bat < 20) || (prnt !== "ok" && prnt !== "normal" && prnt !== "")) hwAlerts++;
+
+          if(!i.apps || i.apps === "" || i.apps.includes("(v?)")) swAlerts++;
+        }
+        return ok;
       });
 
-      // Cálculo del KPI "En Línea Hoy"
-      let today = new Date();
-      let activosHoy = filtered.filter(d => {
-        if(!d.online) return false;
-        let dDate = new Date(d.online);
-        return dDate.getDate() === today.getDate() && dDate.getMonth() === today.getMonth() && dDate.getFullYear() === today.getFullYear();
-      }).length;
-
       document.getElementById('kpiTotal').innerText = fmtNum(filtered.length);
-      document.getElementById('kpiOnline').innerText = fmtNum(activosHoy);
       document.getElementById('kpiActive').innerText = fmtNum(filtered.filter(d => d.status === "Activated").length);
-      document.getElementById('kpiBattery').innerText = fmtNum(filtered.filter(d => parseInt(d.bat) < 20).length);
+      document.getElementById('kpiOnline').innerText = fmtNum(activosHoy);
+      document.getElementById('kpiInactive30').innerText = fmtNum(inactivos30);
+      document.getElementById('kpiHardware').innerText = fmtNum(hwAlerts);
+      document.getElementById('kpiSoftware').innerText = fmtNum(swAlerts);
 
       drawTablesAndGeoChart(filtered);
       updateInteractiveCharts(filtered);
@@ -475,19 +476,16 @@
       let totals = {}, depTotals = {}, maxCount = 0;
 
       data.forEach(d => {
-        // Para mapa y ranking estados
         let stName = d.estadoInfo.name;
         if(!totals[stName]) totals[stName] = { count: 0, iso: d.estadoInfo.iso };
         totals[stName].count++;
         if(totals[stName].count > maxCount) maxCount = totals[stName].count;
 
-        // Para ranking de deployments
         let dName = d.deployment || "Desconocido";
         if(!depTotals[dName]) depTotals[dName] = 0;
         depTotals[dName]++;
       });
 
-      // 1. Tabla de Estados
       let tbody = document.getElementById('stateTableBody');
       let tHtml = "";
       let sortedStates = Object.keys(totals).sort((a,b) => totals[b].count - totals[a].count);
@@ -496,16 +494,13 @@
       });
       tbody.innerHTML = tHtml;
 
-      // 2. Tabla de Deployments
       let dtbody = document.getElementById('depTableBody');
       let dtHtml = "";
-      let sortedDeps = Object.keys(depTotals).sort((a,b) => depTotals[b] - depTotals[a]);
-      sortedDeps.forEach(dep => {
+      Object.keys(depTotals).sort((a,b) => depTotals[b] - depTotals[a]).forEach(dep => {
         dtHtml += `<tr class="border-b hover:bg-gray-50"><td class="p-2 font-medium text-gray-700 text-xs truncate max-w-[150px]" title="${dep}">${dep}</td><td class="p-2 text-amber-600 font-bold text-right">${fmtNum(depTotals[dep])}</td></tr>`;
       });
       dtbody.innerHTML = dtHtml;
 
-      // 3. Mapa GeoChart
       if(chartsLoaded && google.visualization) {
         let mapDataArray = [['Estado', 'Terminales']];
         for (let sName in totals) {
@@ -520,18 +515,26 @@
           backgroundColor: '#f8fafc', datalessRegionColor: '#e2e8f0', defaultColor: '#cbd5e1'
         };
         let chart = new google.visualization.GeoChart(document.getElementById('mapGeneral'));
+        
+        // INTERACTIVIDAD: Click-to-Filter
+        google.visualization.events.addListener(chart, 'select', function() {
+          let selection = chart.getSelection();
+          if (selection.length > 0) {
+            let stateName = dataTable.getValue(selection[0].row, 1);
+            document.getElementById('filterState').value = stateName;
+            applyFilters();
+          }
+        });
+
         chart.draw(dataTable, options);
       }
     }
 
     function updateInteractiveCharts(data) {
       let propCnt = {}, opCnt = {}, modCnt = {};
-      
       data.forEach(d => {
         if(d.propiedad) propCnt[d.propiedad] = (propCnt[d.propiedad] || 0) + 1;
         if(d.model) modCnt[d.model] = (modCnt[d.model] || 0) + 1;
-        
-        // Operadoras solo aplican a equipos que las tienen definidas (Usualmente 4G)
         if(d.operadora && d.operadora !== "Desconocido") opCnt[d.operadora] = (opCnt[d.operadora] || 0) + 1;
       });
 
@@ -584,7 +587,8 @@
       }
       document.getElementById('indNetOp').innerText = netOpStr;
       
-      document.getElementById('indBat').innerText = t.bat || 'N/A';
+      let hwStatus = `Bat: ${t.bat || 'N/A'}% | Impresora: ${t.printer || 'N/A'}`;
+      document.getElementById('indBat').innerText = hwStatus;
       
       let lastOnline = "N/A";
       if(t.online) {
@@ -594,19 +598,13 @@
       document.getElementById('indOnline').innerText = lastOnline;
       document.getElementById('indState').innerText = t.estadoInfo ? t.estadoInfo.name : 'N/A';
 
-      // Tratamiento limpio para las APPS (Viñetas)
       let appsContainer = document.getElementById('indAppsList');
       appsContainer.innerHTML = '';
-      if(t.apps) {
-        let appArray = t.apps.split(" | ");
-        appArray.forEach(app => {
-          let li = document.createElement('li');
-          li.innerText = app;
-          appsContainer.appendChild(li);
+      if(t.apps && t.apps.trim() !== "") {
+        t.apps.split(" | ").forEach(app => {
+          let li = document.createElement('li'); li.innerText = app; appsContainer.appendChild(li);
         });
-      } else {
-        appsContainer.innerHTML = '<li>Sin aplicativos registrados</li>';
-      }
+      } else { appsContainer.innerHTML = '<li>Sin aplicativos registrados</li>'; }
 
       document.getElementById('terminalCard').style.display = 'grid';
 
