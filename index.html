@@ -163,19 +163,9 @@
         <div class="bg-white p-6 rounded shadow">
           <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Información Técnica</h3>
           <p><strong>Procesadora:</strong> <span id="indProc"></span></p>
-          <p><strong>Comercio (Reporte):</strong> <span id="indMerchant"></span></p>
-          
-          <!-- CAJA DE INFORMACIÓN DEL PARQUE (CLIENTE VATC) -->
-          <div id="parqueInfoBox" class="hidden mt-3 mb-3 p-3 bg-blue-50 border border-blue-200 rounded shadow-sm">
-            <p class="text-xs text-blue-800 font-bold uppercase mb-1 flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>
-              Cliente Registrado en VATC
-            </p>
-            <p><strong>Razón Social:</strong> <span id="indClienteParque" class="text-gray-800"></span></p>
-            <p><strong>Estatus Transaccional:</strong> <span id="indDiasParque" class="font-bold"></span></p>
-          </div>
-
-          <p><strong>Deployment:</strong> <span id="indDep" class="text-amber-600 font-semibold"></span></p>
+          <p><strong>Comercio:</strong> <span id="indMerchant"></span></p>
+          <p><strong>Estatus Transaccional:</strong> <span id="indTxStatus"></span></p>
+          <p class="mt-2"><strong>Deployment:</strong> <span id="indDep" class="text-amber-600 font-semibold"></span></p>
           <p><strong>Propiedad:</strong> <span id="indProp" class="text-blue-600 font-bold"></span></p>
           <p><strong>Banco Asignado:</strong> <span id="indBanco" class="text-green-600 font-semibold"></span></p>
           <p><strong>Modelo:</strong> <span id="indModel"></span></p>
@@ -199,6 +189,7 @@
 
     <!-- VISTA 3: BÚSQUEDA POR RADIO -->
     <div id="viewRadius" class="hidden">
+      <!-- Filtros del Radio -->
       <div class="bg-white p-4 rounded shadow mb-4">
         <h3 class="text-sm font-bold text-gray-700 uppercase mb-3 border-b pb-2">Filtros de Búsqueda para el Mapa</h3>
         <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
@@ -239,9 +230,9 @@
           <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Radio MÁXIMO</label>
           <select id="radiusSelect" class="w-full p-2 border rounded outline-none font-semibold text-blue-800 bg-blue-50" onchange="updateRadiusSearch()">
             <option value="0.5">500 Metros</option>
-            <option value="1">1 Kilómetro</option>
+            <option value="1" selected>1 Kilómetro</option>
             <option value="3">3 Kilómetros</option>
-            <option value="5" selected>5 Kilómetros</option>
+            <option value="5">5 Kilómetros</option>
           </select>
         </div>
         <div class="w-full md:w-1/4">
@@ -271,7 +262,7 @@
             <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#ef4444]"></div> Digitel (4G)</li>
             <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#3b82f6]"></div> Movistar (4G)</li>
             <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#22c55e]"></div> Movilnet (4G)</li>
-            <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#9ca3af]"></div> WIFI / Otro</li>
+            <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#8b5cf6]"></div> WIFI / Otro</li>
           </ul>
         </div>
       </div>
@@ -293,12 +284,11 @@
 
     function fmtNum(num) { return Number(num).toLocaleString('es-VE'); }
     
-    // Función para dar formato al estatus de los días
     function fmtEstatusParque(dias) {
-      if(dias === "" || dias === "N/A" || dias === undefined) return "N/A";
+      if(dias === "" || dias === "N/A" || dias === undefined || dias === null) return "Sin datos";
       let num = parseInt(dias);
       if(!isNaN(num)) {
-        return num === 0 ? "Transando (0 días)" : `<span class="text-red-600">${num} días sin transar</span>`;
+        return num === 0 ? '<span class="text-green-600 font-bold">Transando (0 días)</span>' : `<span class="text-red-600 font-bold">${num} días sin transar</span>`;
       }
       return dias;
     }
@@ -341,7 +331,7 @@
           progress += Math.floor(Math.random() * 5) + 1; 
           if(progress > maxFakeProgress) progress = maxFakeProgress;
           pb.style.width = progress + '%'; pc.innerText = progress + '%';
-          if(progress > 20 && progress < 50) pt.innerText = 'Transfiriendo paquete de datos y cruzando con la base de clientes VATC...';
+          if(progress > 20 && progress < 50) pt.innerText = 'Transfiriendo paquete de datos...';
           else if (progress >= 50 && progress < 75) pt.innerText = 'Procesando coordenadas espaciales...';
           else if (progress >= 75) pt.innerText = 'Construyendo dashboard operativo...';
         }
@@ -616,16 +606,9 @@
       if(!t) { document.getElementById('searchError').style.display = 'block'; return; }
 
       document.getElementById('indProc').innerText = t.proc || 'N/A'; 
-      document.getElementById('indMerchant').innerText = t.merchant || 'N/A'; 
-      
-      // Mostrar la caja del Parque si el equipo tiene esa data
-      if(t.clienteParque && t.clienteParque !== "") {
-        document.getElementById('indClienteParque').innerText = t.clienteParque;
-        document.getElementById('indDiasParque').innerHTML = fmtEstatusParque(t.diasSinTransar);
-        document.getElementById('parqueInfoBox').style.display = 'block';
-      } else {
-        document.getElementById('parqueInfoBox').style.display = 'none';
-      }
+      // Si el equipo tiene registro en Parque VATC, priorizamos ese nombre, sino usamos el del TOMS
+      document.getElementById('indMerchant').innerText = (t.clienteParque && t.clienteParque !== "") ? t.clienteParque : (t.merchant || 'N/A'); 
+      document.getElementById('indTxStatus').innerHTML = fmtEstatusParque(t.diasSinTransar);
 
       document.getElementById('indDep').innerText = t.deployment || 'N/A'; document.getElementById('indProp').innerText = t.propiedad || 'N/A'; document.getElementById('indBanco').innerText = t.banco || 'N/A'; document.getElementById('indModel').innerText = t.model || 'N/A'; document.getElementById('indSN').innerText = t.sn || 'N/A'; document.getElementById('indStatus').innerText = t.status || 'N/A';
       
@@ -712,7 +695,7 @@
     }
 
     function getMarkerIcon(net, operadora) {
-      let color = '#9ca3af'; // Gris (WIFI/Otro)
+      let color = '#8b5cf6'; // VIOLETA para WIFI/Otro
       if(net && net.toUpperCase().includes("4G")) {
         if(operadora === 'Movistar') color = '#3b82f6'; 
         else if(operadora === 'Digitel') color = '#ef4444'; 
@@ -777,25 +760,17 @@
             found++;
             let marker = L.marker([t.latNum, t.lngNum], { icon: getMarkerIcon(t.net, t.operadora) });
             
-            // Construimos la caja del cliente VATC si existe para inyectarla en el popup del mapa
-            let parqueHtml = "";
-            if(t.clienteParque && t.clienteParque !== "") {
-              parqueHtml = `
-                <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                  <p class="text-[10px] text-blue-800 uppercase font-bold mb-1">Cliente VATC</p>
-                  <p class="truncate" title="${t.clienteParque}"><b>Comercio:</b> ${t.clienteParque}</p>
-                  <p><b>Estatus Tx:</b> ${fmtEstatusParque(t.diasSinTransar)}</p>
-                </div>`;
-            }
+            let comercioNombre = (t.clienteParque && t.clienteParque !== "") ? t.clienteParque : (t.merchant || 'Comercio Desconocido');
+            let txStatusText = fmtEstatusParque(t.diasSinTransar);
 
             let popupHtml = `
               <div class="text-xs max-w-[200px]">
-                <p class="font-bold text-sm text-blue-700 mb-1 border-b pb-1 truncate" title="${t.merchant}">${t.merchant || 'Comercio Desconocido'}</p>
+                <p class="font-bold text-sm text-blue-700 mb-1 border-b pb-1 truncate" title="${comercioNombre}">${comercioNombre}</p>
                 <p><b>Propiedad:</b> ${t.propiedad || 'N/A'} | <b>Banco:</b> ${t.banco || 'N/A'}</p>
                 <p><b>Modelo:</b> ${t.model || 'N/A'} | <b>Serial:</b> ${t.sn || 'N/A'}</p>
                 <p class="mt-1"><b>Estatus:</b> ${t.status === 'Activated' ? '<span class="text-green-600 font-bold">Activo</span>' : '<span class="text-red-600">Inactivo</span>'}</p>
+                <p><b>Estatus Tx:</b> ${txStatusText}</p>
                 <p><b>Red:</b> ${t.net || 'N/A'} ${t.operadora !== 'Desconocido' ? '<span class="font-bold">('+t.operadora+')</span>' : ''}</p>
-                ${parqueHtml}
               </div>`;
             marker.bindPopup(popupHtml);
             markersLayer.addLayer(marker);
