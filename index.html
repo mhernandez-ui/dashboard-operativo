@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Dashboard Operativo</title>
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Librerías del Mapa Interactivo de Calles (Leaflet) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  
   <style>
     .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: bold; }
     .table-container { max-height: 280px; overflow-y: auto; }
-    iframe, .leaflet-container { border-radius: 0.5rem; z-index: 1; }
+    iframe { border-radius: 0.5rem; }
     .progress-striped {
       background-image: linear-gradient(45deg, rgba(255,255,255,.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.2) 75%, transparent 75%, transparent);
       background-size: 1rem 1rem; animation: stripemove 1s linear infinite; transition: width 0.4s ease;
@@ -41,13 +41,8 @@
     </div>
   </div>
 
-  <!-- Panel de Errores Inteligente -->
-  <div id="errorPanel" class="hidden bg-red-100 border-l-4 border-red-500 text-red-800 p-4 mb-6 rounded shadow text-sm">
-    <p class="font-bold text-lg mb-2">Error de Conexión</p>
-    <div id="errorMessage" class="mb-4 text-base"></div>
-    <button onclick="startDataStream(false)" class="bg-gray-800 text-white px-6 py-2 rounded shadow hover:bg-gray-900 transition font-bold">
-      ↻ Reintentar Conexión
-    </button>
+  <div id="errorPanel" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-6 rounded shadow text-sm">
+    <p class="font-bold">Avisos del Sistema:</p><div id="errorMessage"></div>
   </div>
 
   <div id="progressPanel" class="hidden bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500">
@@ -61,6 +56,7 @@
   </div>
 
   <div id="mainContainer" class="hidden">
+    <!-- Pestañas (AHORA SON 3) -->
     <div class="flex mb-4 border-b border-gray-300 overflow-x-auto">
       <button onclick="switchTab('general')" id="tabGeneral" class="tab-active px-4 py-2 mr-4 transition whitespace-nowrap">Vista General</button>
       <button onclick="switchTab('individual')" id="tabIndividual" class="text-gray-500 px-4 py-2 mr-4 transition hover:text-blue-500 whitespace-nowrap">Consulta Individual</button>
@@ -71,8 +67,10 @@
     <div id="viewGeneral">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div class="flex flex-col">
-          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad (Maestro)</label>
-          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()"><option value="All">Propiedad (Todas)</option></select>
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad (Filtro Maestro)</label>
+          <select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded shadow-sm outline-none font-semibold text-blue-800" onchange="onPropiedadChange()">
+            <option value="All">Propiedad (Todas)</option>
+          </select>
         </div>
         <div class="flex flex-col">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1">Entidad Bancaria</label>
@@ -133,22 +131,28 @@
 
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="col-span-1 md:col-span-2 bg-white p-4 rounded shadow">
-          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2">Densidad Geográfica</h2>
+          <h2 class="text-sm font-bold text-gray-700 uppercase mb-2">Densidad Geográfica (Google GeoChart)</h2>
           <div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center"></div>
         </div>
         
         <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col">
           <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 border-b pb-2">Ranking por Estado</h2>
-          <div class="table-container flex-grow mb-4"><table class="w-full text-left text-sm"><tbody id="stateTableBody"></tbody></table></div>
+          <div class="table-container flex-grow mb-4">
+            <table class="w-full text-left text-sm"><tbody id="stateTableBody"></tbody></table>
+          </div>
           <div class="mt-auto border-t pt-3">
-            <label class="text-xs font-bold text-gray-500 uppercase mb-1">Filtrar Todo por Estado</label>
-            <select id="filterState" class="w-full p-2 border border-blue-300 rounded shadow-sm outline-none bg-blue-50 font-semibold text-blue-800" onchange="applyFilters()"><option value="All">Estado (Todos)</option></select>
+            <label class="text-xs font-bold text-gray-500 uppercase mb-1">Filtrar Mapa y Datos por Estado</label>
+            <select id="filterState" class="w-full p-2 border border-blue-300 rounded shadow-sm outline-none bg-blue-50 font-semibold text-blue-800" onchange="applyFilters()">
+              <option value="All">Estado Geográfico (Todos)</option>
+            </select>
           </div>
         </div>
 
         <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col">
           <h2 class="text-sm font-bold text-gray-700 uppercase mb-2 border-b pb-2">Detalle por Deployment</h2>
-          <div class="table-container flex-grow" style="max-height: 350px;"><table class="w-full text-left text-sm"><tbody id="depTableBody"></tbody></table></div>
+          <div class="table-container flex-grow" style="max-height: 350px;">
+            <table class="w-full text-left text-sm"><tbody id="depTableBody"></tbody></table>
+          </div>
         </div>
       </div>
     </div>
@@ -171,17 +175,14 @@
           <p><strong>Comercio:</strong> <span id="indMerchant"></span></p>
           <p><strong>Deployment:</strong> <span id="indDep" class="text-amber-600 font-semibold"></span></p>
           <p><strong>Propiedad:</strong> <span id="indProp" class="text-blue-600 font-bold"></span></p>
-          <p><strong>Banco:</strong> <span id="indBanco" class="text-green-600 font-semibold"></span></p>
+          <p><strong>Banco Asignado:</strong> <span id="indBanco" class="text-green-600 font-semibold"></span></p>
           <p><strong>Modelo:</strong> <span id="indModel"></span></p>
           <p><strong>Serial (SN):</strong> <span id="indSN"></span></p>
           <p class="mt-4"><strong>Estatus:</strong> <span id="indStatus"></span></p>
           <p><strong>Última Conexión:</strong> <span id="indOnline"></span></p>
           <p><strong>Red y Operadora:</strong> <span id="indNetOp" class="text-purple-600 font-bold"></span></p>
           <p><strong>Batería y Hardware:</strong> <span id="indBat"></span></p>
-          <div class="mt-4 border-t pt-2">
-            <p class="font-bold text-gray-700 mb-1">Apps Instaladas y Versiones:</p>
-            <ul id="indAppsList" class="list-disc pl-5 text-sm text-gray-600 space-y-1"></ul>
-          </div>
+          <p><strong>Estado (Geográfico):</strong> <span id="indState"></span></p>
         </div>
         <div class="bg-white p-2 rounded shadow flex flex-col h-96">
           <h3 class="text-lg font-bold text-gray-700 ml-4 mt-2">Ubicación Exacta</h3>
@@ -190,57 +191,60 @@
       </div>
     </div>
 
-    <!-- VISTA 3: BÚSQUEDA POR RADIO (GEOCERCA) -->
+    <!-- VISTA 3: BÚSQUEDA POR RADIO (NUEVA) -->
     <div id="viewRadius" class="hidden">
-      <div class="bg-white p-4 rounded shadow mb-6">
-        <h2 class="text-lg font-bold mb-2">Módulo de Geocerca (Búsqueda por Radio)</h2>
-        <p class="text-sm text-gray-600 mb-4">1. Busca una dirección o haz clic en el mapa. &nbsp; 2. Selecciona el radio. &nbsp; 3. Visualiza los terminales cercanos.</p>
-        
-        <div class="flex flex-col md:flex-row gap-4">
-          <div class="flex-grow flex gap-2">
-            <input type="text" id="geoSearchInput" placeholder="Ej: Altamira, Caracas o Sambil, Valencia" class="border p-2 rounded w-full outline-none text-sm">
-            <button onclick="searchAddress()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 text-sm whitespace-nowrap">
-              Buscar Dirección
-            </button>
+      <div class="bg-white p-4 rounded shadow mb-6 flex flex-col md:flex-row gap-4 items-end">
+        <div class="w-full md:w-1/2">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Buscar lugar (Ej. Plaza Altamira, Caracas)</label>
+          <div class="flex">
+            <input type="text" id="radiusSearchInput" placeholder="Avenida, ciudad o lugar..." class="border p-2 rounded-l w-full outline-none" onkeydown="if(event.key === 'Enter') searchMapLocation()">
+            <button onclick="searchMapLocation()" class="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700">Buscar</button>
           </div>
-          
-          <div class="flex gap-2 items-center">
-            <label class="text-sm font-bold text-gray-700">Radio:</label>
-            <select id="radiusSelect" class="border p-2 rounded outline-none text-sm" onchange="recalculateRadius()">
-              <option value="0.5">500 metros</option>
-              <option value="1" selected>1 Kilómetro</option>
-              <option value="3">3 Kilómetros</option>
-              <option value="5">5 Kilómetros</option>
-            </select>
-          </div>
+        </div>
+        <div class="w-full md:w-1/4">
+          <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Radio de Búsqueda</label>
+          <select id="radiusSelect" class="w-full p-2 border rounded outline-none" onchange="updateRadiusSearch()">
+            <option value="0.5">500 Metros</option>
+            <option value="1" selected>1 Kilómetro</option>
+            <option value="3">3 Kilómetros</option>
+            <option value="5">5 Kilómetros</option>
+            <option value="10">10 Kilómetros</option>
+            <option value="50">50 Kilómetros</option>
+          </select>
+        </div>
+        <div class="w-full md:w-1/4">
+          <button onclick="locateMe()" class="w-full bg-emerald-600 text-white px-4 py-2 rounded shadow hover:bg-emerald-700 flex items-center justify-center gap-2">
+            📍 Mi Ubicación
+          </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="col-span-1 md:col-span-3 bg-white p-2 rounded shadow flex flex-col" style="height: 600px;">
-          <div id="radiusMapContainer" class="flex-grow w-full h-full bg-gray-100 rounded z-0"></div>
-        </div>
-        
-        <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col h-[600px]">
-          <h3 class="text-sm font-bold text-gray-700 uppercase border-b pb-2 mb-2">Equipos en la Zona</h3>
-          <p class="text-xs text-gray-500 mb-4">Pines encontrados: <span id="radiusTotalCount" class="font-bold text-blue-600 text-lg">0</span></p>
-          
-          <div class="table-container flex-grow overflow-y-auto">
-             <table class="w-full text-left text-xs">
-                <thead><tr class="bg-gray-100"><th class="p-2">Banco/Prop.</th><th class="p-2">Comercio</th></tr></thead>
-                <tbody id="radiusTableBody">
-                  <tr><td colspan="2" class="p-4 text-center text-gray-400">Haz clic en el mapa para buscar.</td></tr>
-                </tbody>
-             </table>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white p-2 rounded shadow">
+          <div class="flex justify-between items-center px-2 py-1 mb-2">
+            <h3 class="text-sm font-bold text-gray-700">Mapa de Proximidad</h3>
+            <span class="text-[10px] bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Puedes hacer clic en cualquier calle del mapa</span>
           </div>
+          <!-- Contenedor del Mapa Leaflet -->
+          <div id="mapRadius" class="w-full h-[500px] bg-gray-200 rounded z-0"></div>
+        </div>
+        <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col">
+          <h3 class="text-lg font-bold text-gray-700 mb-2">Resultados en Radio</h3>
+          <p class="text-sm text-gray-500 mb-4">Centro: <span id="centerText" class="font-bold text-blue-600">Haz clic en el mapa o busca un lugar</span></p>
+          <div class="bg-blue-50 border border-blue-200 p-3 rounded mb-4">
+            <p class="text-xs text-blue-800 uppercase font-bold">Equipos Encontrados</p>
+            <p id="radiusCount" class="text-3xl font-bold text-blue-600">0</p>
+          </div>
+          <p class="text-xs text-gray-500 italic">Los pines azules en el mapa representan a los equipos. Haz clic en un pin para ver detalles del terminal y el comercio.</p>
         </div>
       </div>
     </div>
+
   </div>
 
   <script>
-    // ⚠️ REEMPLAZA ESTA URL POR LA NUEVA QUE GENERASTE
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzrC0lmpHndda5dLkgRjC0s9ihLzzhtxWbVzB7td9HIgyFvqfbaj3V6ka5ksjryb06u/exec';
+    // ⚠️ REEMPLAZA ESTA URL CON TU URL DE APPS SCRIPT
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxMeDV5_URgrhJVmTdVNsOY9lTL1XDkhRqzbYgjlSUVByYSqYY3KDRLUxQeHf4UQ5Rl/exec';
 
     let rawData = [];
     let chartsLoaded = false;
@@ -249,7 +253,11 @@
     let depMenuOpen = false, progressTimer = null; 
     let masterDateRef = new Date(0);
 
-    let radiusMap = null, radiusCircle = null, markerLayer = null, currentCenter = null;
+    // Variables del Mapa de Radio (Leaflet)
+    let radiusMap = null;
+    let radiusCircle = null;
+    let markersLayer = null;
+    let currentCenter = null; // {lat, lng}
 
     function fmtNum(num) { return Number(num).toLocaleString('es-VE'); }
 
@@ -319,6 +327,23 @@
       document.getElementById('progressText').innerText = '¡Construcción completada!';
     }
 
+    async function fetchWithRetry(url, retries = 3) {
+      let pt = document.getElementById('progressText');
+      for (let i = 1; i <= retries; i++) {
+        try {
+          if (i > 1 && pt) pt.innerText = `Interferencia detectada. Reconectando (Intento ${i} de ${retries})...`;
+          let response = await fetch(url, { redirect: 'follow' });
+          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+          return await response.json();
+        } catch (error) {
+          if (i === retries) {
+            throw new Error("La conexión fue bloqueada por el navegador tras 3 intentos. Por favor, recarga la página o intenta abrirla en una 'Ventana de Incógnito' para evitar conflictos de cuentas.");
+          }
+          await new Promise(res => setTimeout(res, 2000));
+        }
+      }
+    }
+
     window.onload = function() {
       google.charts.load('current', { 'packages': ['geochart'] });
       google.charts.setOnLoadCallback(() => {
@@ -328,32 +353,17 @@
       });
     };
 
-    // Motor de conexión optimizado con mensajes claros para 404
-    async function fetchWithRetry(url, retries = 3) {
-      for (let i = 1; i <= retries; i++) {
-        try {
-          let response = await fetch(url, { redirect: 'follow' });
-          if (response.status === 404) {
-             throw new Error("🚨 Error 404: La ruta de Google Apps Script no fue encontrada. Verifica que pegaste la URL correcta terminada en '/exec' en el código HTML, y asegúrate de haber creado una NUEVA implementación.");
-          }
-          if (!response.ok) throw new Error(`El servidor respondió con código HTTP: ${response.status}`);
-          return await response.json();
-        } catch (error) {
-          if (error.message.includes("404")) throw error; // Si es 404, no reintentes, aborta y avisa.
-          if (i === retries) throw new Error("Fallo de conexión persistente. Asegúrate de configurar la implementación de Google como 'Ejecutar como: Yo' y 'Acceso: Cualquier persona'.");
-          await new Promise(res => setTimeout(res, 2000));
-        }
-      }
-    }
-
     async function startDataStream(forceConsolidate = false) {
       let btnCons = document.getElementById('btnConsolidate');
       btnCons.disabled = true;
 
       document.getElementById('errorPanel').style.display = 'none';
       document.getElementById('progressPanel').style.display = 'block';
-      document.getElementById('mainContainer').style.display = 'none';
-      
+      document.getElementById('mainContainer').style.display = 'block';
+      document.getElementById('progressBar').style.width = '2%';
+      document.getElementById('progressCount').innerText = '2%';
+      document.getElementById('progressText').innerText = forceConsolidate ? 'Escaneando carpetas en Google Drive...' : 'Conectando con la base principal...';
+
       startProgressAnimation(forceConsolidate);
 
       try {
@@ -372,15 +382,14 @@
 
         rawData.forEach(item => {
           item.estadoInfo = { name: "Desconocido", iso: null };
-          item.latNum = null;
-          item.lonNum = null;
-
+          item.latNum = null; item.lngNum = null;
+          
           if(item.loc) {
             let c = item.loc.replace(/"/g, "").split(",");
             if(c.length === 2) {
               item.latNum = parseFloat(c[0]);
-              item.lonNum = parseFloat(c[1]);
-              item.estadoInfo = getStateInfo(item.latNum, item.lonNum);
+              item.lngNum = parseFloat(c[1]);
+              item.estadoInfo = getStateInfo(item.latNum, item.lngNum);
             }
           }
           item.propiedad = extractOwnership(item.deployment);
@@ -393,18 +402,13 @@
         });
 
         stopProgressAnimation();
-        
         if(result.updatedAt) document.getElementById('lastUpdateText').innerText = `Última actualización: ${result.updatedAt}`;
         document.getElementById('lblRefDate').innerText = `(Ref: ${masterDateRef.toLocaleDateString('es-VE')})`;
 
         populatePropiedadFilter();
         applyFilters();
 
-        setTimeout(() => { 
-          document.getElementById('progressPanel').style.display = 'none'; 
-          document.getElementById('mainContainer').style.display = 'block';
-        }, 1000);
-        
+        setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 1500);
       } catch (err) {
         if(progressTimer) clearInterval(progressTimer);
         document.getElementById('progressPanel').style.display = 'none';
@@ -427,8 +431,8 @@
 
     function onPropiedadChange() {
       let selectedProp = document.getElementById('filterPropiedad').value;
-      let bSet = new Set(), mSet = new Set(), eSet = new Set(), dSet = new Set();
       
+      let bSet = new Set(), mSet = new Set(), eSet = new Set(), dSet = new Set();
       rawData.forEach(i => {
         if(selectedProp === "All" || i.propiedad === selectedProp) {
           if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco);
@@ -447,10 +451,11 @@
       let depContainer = document.getElementById('depMenuContainer');
       let dHtml = '';
       Array.from(dSet).sort().forEach(dep => {
-        dHtml += `<label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded cursor-pointer truncate">
-                    <input type="checkbox" value="${dep}" onchange="handleDepSelect(this)" class="form-checkbox text-blue-600 rounded">
-                    <span title="${dep}">${dep}</span>
-                  </label>`;
+        dHtml += `
+          <label class="flex items-center space-x-2 p-1 hover:bg-gray-100 rounded cursor-pointer truncate">
+            <input type="checkbox" value="${dep}" onchange="handleDepSelect(this)" class="form-checkbox text-blue-600 rounded">
+            <span title="${dep}">${dep}</span>
+          </label>`;
       });
       depContainer.innerHTML = dHtml;
 
@@ -599,7 +604,6 @@
 
     function updateInteractiveCharts(data) {
       let propCnt = {}, opCnt = {}, modCnt = {}, bancCnt = {}, netCnt = {}, procCnt = {};
-      
       data.forEach(d => {
         if(d.propiedad) propCnt[d.propiedad] = (propCnt[d.propiedad] || 0) + 1;
         if(d.model) modCnt[d.model] = (modCnt[d.model] || 0) + 1;
@@ -665,6 +669,137 @@
       });
     }
 
+    // --- NUEVO: FUNCIONES DEL MAPA DE RADIO (LEAFLET) --- //
+    
+    function initRadiusMap() {
+      if(!radiusMap) {
+        // Inicializa en Caracas por defecto
+        radiusMap = L.map('mapRadius').setView([10.4806, -66.9036], 6);
+        // Mapa base de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(radiusMap);
+        
+        markersLayer = L.layerGroup().addTo(radiusMap);
+
+        // Evento: Al hacer clic en cualquier lugar del mapa
+        radiusMap.on('click', function(e) {
+          setCenterAndSearch(e.latlng.lat, e.latlng.lng, `Coordenadas: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
+        });
+      }
+      // Corrige el problema visual si el mapa se inicializó mientras el div estaba oculto
+      setTimeout(() => { radiusMap.invalidateSize(); }, 300);
+    }
+
+    // Buscador Inteligente (Nominatim)
+    async function searchMapLocation() {
+      let q = document.getElementById('radiusSearchInput').value;
+      if(!q) return;
+      document.getElementById('centerText').innerText = "Buscando...";
+      
+      try {
+        // Se añade 'Venezuela' para forzar resultados locales
+        let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ', Venezuela')}`);
+        let data = await res.json();
+        if(data && data.length > 0) {
+           let lat = parseFloat(data[0].lat);
+           let lon = parseFloat(data[0].lon);
+           radiusMap.setView([lat, lon], 14); // Hacer Zoom
+           setCenterAndSearch(lat, lon, data[0].display_name.split(',')[0]); 
+        } else {
+           alert("No se encontró la ubicación. Intenta ser más específico (Ej. Plaza Venezuela, Caracas).");
+           document.getElementById('centerText').innerText = "Ubicación no encontrada.";
+        }
+      } catch(e) {
+        alert("Error de conexión al buscar la ubicación.");
+      }
+    }
+
+    // Geolocalización del navegador
+    function locateMe() {
+      if (!navigator.geolocation) { alert("Tu navegador no soporta geolocalización."); return; }
+      document.getElementById('centerText').innerText = "Obteniendo tu ubicación GPS...";
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          let lat = pos.coords.latitude;
+          let lng = pos.coords.longitude;
+          radiusMap.setView([lat, lng], 15);
+          setCenterAndSearch(lat, lng, "Tu Ubicación Actual");
+        }, 
+        (err) => { alert("No se pudo obtener tu ubicación. Revisa los permisos de tu navegador."); document.getElementById('centerText').innerText = "Error GPS."; }
+      );
+    }
+
+    // Fórmula Haversine ultraligera para calcular distancias
+    function getDistanceInKm(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radio de la Tierra en km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function setCenterAndSearch(lat, lng, label = null) {
+      currentCenter = { lat: lat, lng: lng };
+      if(label) document.getElementById('centerText').innerText = label;
+      else document.getElementById('centerText').innerText = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      updateRadiusSearch();
+    }
+
+    function updateRadiusSearch() {
+      if(!currentCenter) return; // Si no hay punto central seleccionado, no hace nada
+
+      let radiusKm = parseFloat(document.getElementById('radiusSelect').value);
+      
+      // Limpiar mapa anterior
+      markersLayer.clearLayers();
+      if(radiusCircle) radiusMap.removeLayer(radiusCircle);
+
+      // Dibujar nuevo círculo rojo transparente
+      radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], {
+          color: 'red',
+          fillColor: '#f03',
+          fillOpacity: 0.1,
+          radius: radiusKm * 1000 // Leaflet usa metros para los círculos
+      }).addTo(radiusMap);
+
+      // Filtro Matemático
+      let foundTerminals = [];
+      rawData.forEach(t => {
+        if(t.latNum && t.lngNum) {
+          let dist = getDistanceInKm(currentCenter.lat, currentCenter.lng, t.latNum, t.lngNum);
+          if(dist <= radiusKm) {
+            foundTerminals.push(t);
+            // Dibujar Pin (Marker) en el mapa
+            let marker = L.marker([t.latNum, t.lngNum]);
+            
+            // Construir la tarjeta flotante (Popup)
+            let popupHtml = `
+              <div class="text-xs">
+                <p class="font-bold text-sm text-blue-700 mb-1 border-b">${t.merchant || 'Comercio Desconocido'}</p>
+                <p><b>Propiedad:</b> ${t.propiedad || 'N/A'}</p>
+                <p><b>Banco:</b> ${t.banco || 'N/A'}</p>
+                <p><b>Modelo:</b> ${t.model || 'N/A'}</p>
+                <p><b>Serial:</b> ${t.sn || 'N/A'}</p>
+                <p><b>Estatus:</b> ${t.status === 'Activated' ? '<span class="text-green-600 font-bold">Activo</span>' : '<span class="text-red-600">Inactivo</span>'}</p>
+                <p><b>Red:</b> ${t.net || 'N/A'} ${t.operadora !== 'Desconocido' ? '('+t.operadora+')' : ''}</p>
+              </div>
+            `;
+            marker.bindPopup(popupHtml);
+            markersLayer.addLayer(marker);
+          }
+        }
+      });
+
+      document.getElementById('radiusCount').innerText = fmtNum(foundTerminals.length);
+    }
+
+    // --- FIN FUNCIONES LEAFLET --- //
+
     function searchTerminal() {
       const q = document.getElementById('searchInput').value.trim().toLowerCase();
       document.getElementById('searchError').style.display = 'none';
@@ -685,29 +820,13 @@
       document.getElementById('indStatus').innerText = t.status || 'N/A';
       
       let netOpStr = t.net || 'N/A';
-      if(t.net && t.net.toUpperCase().includes("4G") && t.operadora && t.operadora !== "Desconocido") {
-        netOpStr += ` (${t.operadora})`;
-      }
+      if(t.net && t.net.toUpperCase().includes("4G") && t.operadora && t.operadora !== "Desconocido") netOpStr += ` (${t.operadora})`;
       document.getElementById('indNetOp').innerText = netOpStr;
       
-      let hwStatus = `Bat: ${t.bat || 'N/A'}% | Impresora: ${t.printer || 'N/A'}`;
-      document.getElementById('indBat').innerText = hwStatus;
-      
       let lastOnline = "N/A";
-      if(t.online) {
-        let olDate = new Date(t.online);
-        lastOnline = olDate.toLocaleString("es-VE");
-      }
+      if(t.online) { let olDate = new Date(t.online); lastOnline = olDate.toLocaleString("es-VE"); }
       document.getElementById('indOnline').innerText = lastOnline;
       document.getElementById('indState').innerText = t.estadoInfo ? t.estadoInfo.name : 'N/A';
-
-      let appsContainer = document.getElementById('indAppsList');
-      appsContainer.innerHTML = '';
-      if(t.apps && t.apps.trim() !== "") {
-        t.apps.split(" | ").forEach(app => {
-          let li = document.createElement('li'); li.innerText = app; appsContainer.appendChild(li);
-        });
-      } else { appsContainer.innerHTML = '<li>Sin aplicativos registrados</li>'; }
 
       document.getElementById('terminalCard').style.display = 'grid';
 
@@ -722,83 +841,19 @@
       }
     }
 
-    function getDistanceInKm(lat1, lon1, lat2, lon2) {
-      const R = 6371; 
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-    }
-
-    function initRadiusMap() {
-      if (!radiusMap) {
-        radiusMap = L.map('radiusMapContainer').setView([10.4806, -66.9036], 6); 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(radiusMap);
-        markerLayer = L.layerGroup().addTo(radiusMap);
-        radiusMap.on('click', function(e) { updateRadiusSearch(e.latlng.lat, e.latlng.lng); });
-      }
-      setTimeout(() => { radiusMap.invalidateSize(); }, 300);
-    }
-
-    async function searchAddress() {
-      let query = document.getElementById('geoSearchInput').value.trim();
-      if(!query) return;
-      try {
-        let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=VE`);
-        let data = await res.json();
-        if(data && data.length > 0) {
-          let lat = parseFloat(data[0].lat), lon = parseFloat(data[0].lon);
-          radiusMap.setView([lat, lon], 14); 
-          updateRadiusSearch(lat, lon);
-        } else { alert("📍 Dirección no encontrada."); }
-      } catch (e) { alert("Error al buscar la dirección."); }
-    }
-
-    function recalculateRadius() {
-      if(currentCenter) updateRadiusSearch(currentCenter.lat, currentCenter.lon);
-    }
-
-    function updateRadiusSearch(lat, lon) {
-      currentCenter = { lat: lat, lon: lon };
-      let radiusKm = parseFloat(document.getElementById('radiusSelect').value);
-      
-      if(radiusCircle) radiusMap.removeLayer(radiusCircle);
-      markerLayer.clearLayers();
-
-      radiusCircle = L.circle([lat, lon], { color: '#ef4444', fillColor: '#f87171', fillOpacity: 0.2, radius: radiusKm * 1000 }).addTo(radiusMap);
-
-      let foundEquips = [];
-      rawData.forEach(item => {
-        if (item.latNum !== null && item.lonNum !== null) {
-          if (getDistanceInKm(lat, lon, item.latNum, item.lonNum) <= radiusKm) foundEquips.push(item);
-        }
-      });
-
-      document.getElementById('radiusTotalCount').innerText = foundEquips.length;
-      let tbody = document.getElementById('radiusTableBody'), html = '';
-
-      if (foundEquips.length === 0) {
-        html = '<tr><td colspan="2" class="p-4 text-center text-gray-400">Ningún terminal en esta zona.</td></tr>';
-      } else {
-        foundEquips.forEach(item => {
-          let dName = item.merchant || "Desconocido";
-          html += `<tr class="border-b hover:bg-gray-50"><td class="p-2 text-blue-600 font-bold text-xs truncate max-w-[100px]">${item.propiedad}</td><td class="p-2 font-medium text-gray-700 text-xs truncate max-w-[150px]">${dName}</td></tr>`;
-          L.marker([item.latNum, item.lonNum]).bindTooltip(`<div style="font-size:12px;"><b>Propiedad:</b> ${item.propiedad}<br><b>Comercio:</b> ${dName}<br><b>Modelo:</b> ${item.model}<br><b>Serial:</b> ${item.sn}</div>`).addTo(markerLayer);
-        });
-      }
-      tbody.innerHTML = html;
-    }
-
     function switchTab(t) {
       document.getElementById('viewGeneral').style.display = t === 'general' ? 'block' : 'none';
       document.getElementById('viewIndividual').style.display = t === 'individual' ? 'block' : 'none';
       document.getElementById('viewRadius').style.display = t === 'radius' ? 'block' : 'none';
       
-      document.getElementById('tabGeneral').className = t === 'general' ? 'tab-active px-4 py-2 mr-4 whitespace-nowrap' : 'text-gray-500 px-4 py-2 mr-4 whitespace-nowrap hover:text-blue-500';
-      document.getElementById('tabIndividual').className = t === 'individual' ? 'tab-active px-4 py-2 mr-4 whitespace-nowrap' : 'text-gray-500 px-4 py-2 mr-4 whitespace-nowrap hover:text-blue-500';
-      document.getElementById('tabRadius').className = t === 'radius' ? 'tab-active px-4 py-2 whitespace-nowrap' : 'text-gray-500 px-4 py-2 whitespace-nowrap hover:text-blue-500';
-
-      if (t === 'radius') initRadiusMap();
+      document.getElementById('tabGeneral').className = t === 'general' ? 'tab-active px-4 py-2 mr-4 whitespace-nowrap' : 'text-gray-500 px-4 py-2 mr-4 hover:text-blue-500 whitespace-nowrap';
+      document.getElementById('tabIndividual').className = t === 'individual' ? 'tab-active px-4 py-2 mr-4 whitespace-nowrap' : 'text-gray-500 px-4 py-2 mr-4 hover:text-blue-500 whitespace-nowrap';
+      document.getElementById('tabRadius').className = t === 'radius' ? 'tab-active px-4 py-2 whitespace-nowrap' : 'text-gray-500 px-4 py-2 hover:text-blue-500 whitespace-nowrap';
+      
+      // Es obligatorio llamar esto al abrir la pestaña para que Leaflet ajuste el tamaño del mapa
+      if(t === 'radius' && rawData.length > 0) {
+        initRadiusMap();
+      }
     }
   </script>
 </body>
