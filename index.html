@@ -6,7 +6,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Librerías del Mapa Interactivo de Calles (Leaflet) -->
+  <!-- Librerías del Mapa Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
@@ -23,6 +23,9 @@
     .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
     .custom-pin { background: transparent; border: none; }
     .pin-circle { width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
+    /* Animación para el aviso de Tamper */
+    .blink-bg { animation: blinkingBackground 2s infinite; }
+    @keyframes blinkingBackground { 0% { background-color: #fee2e2; } 50% { background-color: #fca5a5; } 100% { background-color: #fee2e2; } }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
@@ -44,8 +47,7 @@
   </div>
 
   <div id="errorPanel" class="hidden bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-6 rounded shadow text-sm">
-    <p class="font-bold">Aviso del Sistema:</p>
-    <div id="errorMessage"></div>
+    <p class="font-bold">Aviso del Sistema:</p><div id="errorMessage"></div>
   </div>
 
   <div id="progressPanel" class="hidden bg-white p-4 rounded shadow mb-6 border-l-4 border-blue-500">
@@ -111,12 +113,16 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+      <!-- 8 KPIs AMPLIADOS -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white p-3 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-xl font-bold">0</p></div>
         <div class="bg-white p-3 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Activos</h3><p id="kpiActive" class="text-xl font-bold text-green-600">0</p></div>
         <div class="bg-white p-3 rounded shadow border-l-4 border-emerald-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase whitespace-nowrap">En Línea <span id="lblRefDate" class="text-[9px] text-gray-400"></span></h3><p id="kpiOnline" class="text-xl font-bold text-emerald-600">0</p></div>
         <div class="bg-white p-3 rounded shadow border-l-4 border-orange-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Inactivos > 30 Días</h3><p id="kpiInactive30" class="text-xl font-bold text-orange-600">0</p></div>
-        <div class="bg-white p-3 rounded shadow border-l-4 border-red-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Hardware</h3><p id="kpiHardware" class="text-xl font-bold text-red-600">0</p></div>
+        
+        <div class="bg-white p-3 rounded shadow border-l-4 border-red-600"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Casos Tamper</h3><p id="kpiTamper" class="text-xl font-bold text-red-600">0</p></div>
+        <div class="bg-white p-3 rounded shadow border-l-4 border-rose-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Problemas Batería</h3><p id="kpiBatHealth" class="text-xl font-bold text-rose-600">0</p></div>
+        <div class="bg-white p-3 rounded shadow border-l-4 border-pink-400"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Hardware</h3><p id="kpiHardware" class="text-xl font-bold text-pink-600">0</p></div>
         <div class="bg-white p-3 rounded shadow border-l-4 border-purple-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Software</h3><p id="kpiSoftware" class="text-xl font-bold text-purple-600">0</p></div>
       </div>
 
@@ -159,8 +165,16 @@
         </div>
         <p id="searchError" class="text-red-500 mt-2 hidden">Terminal no encontrado.</p>
       </div>
+
       <div id="terminalCard" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white p-6 rounded shadow">
+          
+          <!-- ALERTA DE INCIDENCIAS -->
+          <div id="incidenciaAlertBox" class="hidden mb-4 p-3 border border-red-400 rounded shadow-sm blink-bg">
+            <p class="text-sm text-red-800 font-bold uppercase mb-1 flex items-center gap-1">⚠️ ATENCIÓN: INCIDENCIA REPORTADA</p>
+            <ul id="incidenciaList" class="list-disc pl-5 text-sm text-red-700 font-semibold"></ul>
+          </div>
+
           <h3 class="text-xl font-bold text-gray-700 border-b pb-2 mb-4">Información Técnica</h3>
           <p><strong>Procesadora:</strong> <span id="indProc"></span></p>
           <p><strong>Comercio:</strong> <span id="indMerchant"></span></p>
@@ -279,7 +293,6 @@
     let selectedDeps = new Set();
     let depMenuOpen = false, progressTimer = null; 
     let masterDateRef = new Date(0);
-
     let radiusMap = null, radiusCircle = null, markersLayer = null, currentCenter = null;
 
     function fmtNum(num) { return Number(num).toLocaleString('es-VE'); }
@@ -331,7 +344,7 @@
           progress += Math.floor(Math.random() * 5) + 1; 
           if(progress > maxFakeProgress) progress = maxFakeProgress;
           pb.style.width = progress + '%'; pc.innerText = progress + '%';
-          if(progress > 20 && progress < 50) pt.innerText = 'Transfiriendo paquete de datos...';
+          if(progress > 20 && progress < 50) pt.innerText = 'Transfiriendo paquete de datos y cruzando con incidencias...';
           else if (progress >= 50 && progress < 75) pt.innerText = 'Procesando coordenadas espaciales...';
           else if (progress >= 75) pt.innerText = 'Construyendo dashboard operativo...';
         }
@@ -508,7 +521,7 @@
     function applyFilters() {
       const fProp = document.getElementById('filterPropiedad').value, fBanc = document.getElementById('filterBanco').value, fProc = document.getElementById('filterProc').value, fStat = document.getElementById('filterStatus').value, fNet = document.getElementById('filterNet').value, fOp = document.getElementById('filterOperadora').value, fMod = document.getElementById('filterModel').value, fState = document.getElementById('filterState').value;
       
-      let activosHoy = 0, inactivos30 = 0, hwAlerts = 0, swAlerts = 0;
+      let activosHoy = 0, inactivos30 = 0, hwAlerts = 0, swAlerts = 0, casosTamper = 0, casosBatHealth = 0;
 
       let filtered = rawData.filter(i => {
         let ok = (fProp === "All" || i.propiedad === fProp) && (fBanc === "All" || i.banco === fBanc) && (fProc === "All" || i.proc === fProc) && (fStat === "All" || i.status === fStat) && (fNet === "All" || (i.net && i.net.toUpperCase().includes(fNet))) && (fOp === "All" || i.operadora === fOp) && (fMod === "All" || i.model === fMod) && (fState === "All" || i.estadoInfo.name === fState) && (selectedDeps.size === 0 || selectedDeps.has(i.deployment));
@@ -518,9 +531,14 @@
             if(dDate.toDateString() === masterDateRef.toDateString()) activosHoy++;
             if(((masterDateRef - dDate) / (1000 * 3600 * 24)) > 30) inactivos30++;
           } else { inactivos30++; }
+          
           let bat = parseInt(i.bat), prnt = i.printer ? i.printer.toLowerCase() : "ok";
           if((!isNaN(bat) && bat < 20) || (prnt !== "ok" && prnt !== "normal" && prnt !== "")) hwAlerts++;
           if(!i.apps || i.apps === "" || i.apps.includes("(v?)")) swAlerts++;
+          
+          // Contadores de incidencias
+          if(i.tamperAlert === "Sí") casosTamper++;
+          if(i.batHealthAlert && i.batHealthAlert !== "") casosBatHealth++;
         }
         return ok;
       });
@@ -529,6 +547,8 @@
       document.getElementById('kpiActive').innerText = fmtNum(filtered.filter(d => d.status === "Activated").length);
       document.getElementById('kpiOnline').innerText = fmtNum(activosHoy);
       document.getElementById('kpiInactive30').innerText = fmtNum(inactivos30);
+      document.getElementById('kpiTamper').innerText = fmtNum(casosTamper);
+      document.getElementById('kpiBatHealth').innerText = fmtNum(casosBatHealth);
       document.getElementById('kpiHardware').innerText = fmtNum(hwAlerts);
       document.getElementById('kpiSoftware').innerText = fmtNum(swAlerts);
 
@@ -605,11 +625,21 @@
       const t = rawData.find(i => (i.sn && i.sn.toLowerCase() === q));
       if(!t) { document.getElementById('searchError').style.display = 'block'; return; }
 
+      // Gestión de Alertas Críticas (Tamper / Batería)
+      let alerts = [];
+      if(t.tamperAlert === "Sí") alerts.push("Posible problema de Tamper detectado.");
+      if(t.batHealthAlert && t.batHealthAlert !== "") alerts.push(`Problema de Batería reportado: ${t.batHealthAlert}`);
+      
+      let incBox = document.getElementById('incidenciaAlertBox');
+      let incList = document.getElementById('incidenciaList');
+      if(alerts.length > 0) {
+        incList.innerHTML = alerts.map(a => `<li>${a}</li>`).join("");
+        incBox.style.display = 'block';
+      } else { incBox.style.display = 'none'; }
+
       document.getElementById('indProc').innerText = t.proc || 'N/A'; 
-      // Si el equipo tiene registro en Parque VATC, priorizamos ese nombre, sino usamos el del TOMS
       document.getElementById('indMerchant').innerText = (t.clienteParque && t.clienteParque !== "") ? t.clienteParque : (t.merchant || 'N/A'); 
       document.getElementById('indTxStatus').innerHTML = fmtEstatusParque(t.diasSinTransar);
-
       document.getElementById('indDep').innerText = t.deployment || 'N/A'; document.getElementById('indProp').innerText = t.propiedad || 'N/A'; document.getElementById('indBanco').innerText = t.banco || 'N/A'; document.getElementById('indModel').innerText = t.model || 'N/A'; document.getElementById('indSN').innerText = t.sn || 'N/A'; document.getElementById('indStatus').innerText = t.status || 'N/A';
       
       let netOpStr = t.net || 'N/A'; if(t.net && t.net.toUpperCase().includes("4G") && t.operadora && t.operadora !== "Desconocido") netOpStr += ` (${t.operadora})`;
@@ -630,7 +660,6 @@
       }
     }
 
-    // --- FUNCIONES DEL MAPA DE RADIO (LEAFLET Y NOMINATIM) --- //
     function initRadiusMap() {
       if(!radiusMap) {
         radiusMap = L.map('mapRadius').setView([10.4806, -66.9036], 6);
@@ -645,27 +674,20 @@
     async function handleSearchAutocomplete(e) {
       let q = e.target.value.trim();
       let resultsContainer = document.getElementById('autocompleteResults');
-      
       if(q.length < 3) { resultsContainer.style.display = 'none'; return; }
-      
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(async () => {
         try {
           let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ', Venezuela')}&limit=5`);
           let data = await res.json();
           resultsContainer.innerHTML = '';
-          
           if(data && data.length > 0) {
             data.forEach(item => {
-              let li = document.createElement('li');
-              li.className = "p-2 hover:bg-blue-50 cursor-pointer text-sm border-b text-gray-700 truncate";
-              li.innerText = item.display_name;
+              let li = document.createElement('li'); li.className = "p-2 hover:bg-blue-50 cursor-pointer text-sm border-b text-gray-700 truncate"; li.innerText = item.display_name;
               li.onclick = () => {
-                document.getElementById('radiusSearchInput').value = item.display_name.split(',')[0];
-                resultsContainer.style.display = 'none';
+                document.getElementById('radiusSearchInput').value = item.display_name.split(',')[0]; resultsContainer.style.display = 'none';
                 let lat = parseFloat(item.lat), lon = parseFloat(item.lon);
-                radiusMap.setView([lat, lon], 14);
-                setCenterAndSearch(lat, lon, item.display_name.split(',')[0]); 
+                radiusMap.setView([lat, lon], 14); setCenterAndSearch(lat, lon, item.display_name.split(',')[0]); 
               };
               resultsContainer.appendChild(li);
             });
@@ -681,8 +703,7 @@
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           let lat = pos.coords.latitude, lng = pos.coords.longitude;
-          radiusMap.setView([lat, lng], 15);
-          setCenterAndSearch(lat, lng, "Tu Ubicación Actual");
+          radiusMap.setView([lat, lng], 15); setCenterAndSearch(lat, lng, "Tu Ubicación Actual");
         }, 
         (err) => { alert("No se pudo obtener tu ubicación. Revisa permisos."); document.getElementById('centerText').innerText = "Error GPS."; }
       );
@@ -697,28 +718,18 @@
     function getMarkerIcon(net, operadora) {
       let color = '#8b5cf6'; // VIOLETA para WIFI/Otro
       if(net && net.toUpperCase().includes("4G")) {
-        if(operadora === 'Movistar') color = '#3b82f6'; 
-        else if(operadora === 'Digitel') color = '#ef4444'; 
-        else if(operadora === 'Movilnet') color = '#22c55e'; 
+        if(operadora === 'Movistar') color = '#3b82f6'; else if(operadora === 'Digitel') color = '#ef4444'; else if(operadora === 'Movilnet') color = '#22c55e'; 
       }
-      return L.divIcon({
-        className: 'custom-pin',
-        html: `<div class="pin-circle" style="background-color:${color};"></div>`,
-        iconSize: [16, 16], iconAnchor: [8, 8]
-      });
+      return L.divIcon({ className: 'custom-pin', html: `<div class="pin-circle" style="background-color:${color};"></div>`, iconSize: [16, 16], iconAnchor: [8, 8] });
     }
 
     function onRadiusPropChange() {
       let sProp = document.getElementById('rFilterPropiedad').value;
       let bSet = new Set(), mSet = new Set();
       rawData.forEach(i => {
-        if(sProp === "All" || i.propiedad === sProp) {
-          if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco);
-          if(i.model) mSet.add(i.model);
-        }
+        if(sProp === "All" || i.propiedad === sProp) { if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco); if(i.model) mSet.add(i.model); }
       });
-      fillSelect('rFilterBanco', Array.from(bSet).sort(), "Banco");
-      fillSelect('rFilterModel', Array.from(mSet).sort(), "Modelo");
+      fillSelect('rFilterBanco', Array.from(bSet).sort(), "Banco"); fillSelect('rFilterModel', Array.from(mSet).sort(), "Modelo");
       updateRadiusSearch();
     }
 
@@ -738,38 +749,39 @@
 
     function updateRadiusSearch() {
       if(!currentCenter) return; 
-
       let radiusKm = parseFloat(document.getElementById('radiusSelect').value);
-      
       let fProp = document.getElementById('rFilterPropiedad').value, fBanc = document.getElementById('rFilterBanco').value, fProc = document.getElementById('rFilterProc').value, fNet = document.getElementById('rFilterNet').value, fOp = document.getElementById('rFilterOperadora').value, fMod = document.getElementById('rFilterModel').value;
 
-      markersLayer.clearLayers();
-      if(radiusCircle) radiusMap.removeLayer(radiusCircle);
-
-      radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], {
-          color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, radius: radiusKm * 1000 
-      }).addTo(radiusMap);
+      markersLayer.clearLayers(); if(radiusCircle) radiusMap.removeLayer(radiusCircle);
+      radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, radius: radiusKm * 1000 }).addTo(radiusMap);
 
       let found = 0;
       rawData.forEach(t => {
         let ok = (fProp === "All" || t.propiedad === fProp) && (fBanc === "All" || t.banco === fBanc) && (fProc === "All" || t.proc === fProc) && (fNet === "All" || (t.net && t.net.toUpperCase().includes(fNet))) && (fOp === "All" || t.operadora === fOp) && (fMod === "All" || t.model === fMod);
-        
         if(ok && t.latNum && t.lngNum) {
           let dist = getDistanceInKm(currentCenter.lat, currentCenter.lng, t.latNum, t.lngNum);
           if(dist <= radiusKm) {
             found++;
             let marker = L.marker([t.latNum, t.lngNum], { icon: getMarkerIcon(t.net, t.operadora) });
-            
             let comercioNombre = (t.clienteParque && t.clienteParque !== "") ? t.clienteParque : (t.merchant || 'Comercio Desconocido');
-            let txStatusText = fmtEstatusParque(t.diasSinTransar);
+            
+            // Etiqueta visual de alerta en el mapa
+            let alertBanner = '';
+            if (t.tamperAlert === "Sí" || (t.batHealthAlert && t.batHealthAlert !== "")) {
+                let msgs = [];
+                if(t.tamperAlert === "Sí") msgs.push("TAMPER");
+                if(t.batHealthAlert) msgs.push(`BATERÍA: ${t.batHealthAlert}`);
+                alertBanner = `<div class="bg-red-100 text-red-800 p-1 mb-2 rounded border border-red-300 font-bold text-[10px] uppercase text-center">⚠️ ${msgs.join(" | ")}</div>`;
+            }
 
             let popupHtml = `
               <div class="text-xs max-w-[200px]">
+                ${alertBanner}
                 <p class="font-bold text-sm text-blue-700 mb-1 border-b pb-1 truncate" title="${comercioNombre}">${comercioNombre}</p>
                 <p><b>Propiedad:</b> ${t.propiedad || 'N/A'} | <b>Banco:</b> ${t.banco || 'N/A'}</p>
                 <p><b>Modelo:</b> ${t.model || 'N/A'} | <b>Serial:</b> ${t.sn || 'N/A'}</p>
                 <p class="mt-1"><b>Estatus:</b> ${t.status === 'Activated' ? '<span class="text-green-600 font-bold">Activo</span>' : '<span class="text-red-600">Inactivo</span>'}</p>
-                <p><b>Estatus Tx:</b> ${txStatusText}</p>
+                <p><b>Estatus Tx:</b> ${fmtEstatusParque(t.diasSinTransar)}</p>
                 <p><b>Red:</b> ${t.net || 'N/A'} ${t.operadora !== 'Desconocido' ? '<span class="font-bold">('+t.operadora+')</span>' : ''}</p>
               </div>`;
             marker.bindPopup(popupHtml);
@@ -777,7 +789,6 @@
           }
         }
       });
-
       document.getElementById('radiusCount').innerText = fmtNum(found);
     }
 
@@ -785,11 +796,9 @@
       document.getElementById('viewGeneral').style.display = t === 'general' ? 'block' : 'none';
       document.getElementById('viewIndividual').style.display = t === 'individual' ? 'block' : 'none';
       document.getElementById('viewRadius').style.display = t === 'radius' ? 'block' : 'none';
-      
       document.getElementById('tabGeneral').className = t === 'general' ? 'tab-active px-4 py-2 mr-4 whitespace-nowrap' : 'text-gray-500 px-4 py-2 mr-4 hover:text-blue-500 whitespace-nowrap';
       document.getElementById('tabIndividual').className = t === 'individual' ? 'tab-active px-4 py-2 mr-4 whitespace-nowrap' : 'text-gray-500 px-4 py-2 mr-4 hover:text-blue-500 whitespace-nowrap';
       document.getElementById('tabRadius').className = t === 'radius' ? 'tab-active px-4 py-2 whitespace-nowrap' : 'text-gray-500 px-4 py-2 hover:text-blue-500 whitespace-nowrap';
-      
       if(t === 'radius' && rawData.length > 0) initRadiusMap();
     }
   </script>
