@@ -21,11 +21,24 @@
     @keyframes stripemove { from { background-position: 1rem 0; } to { background-position: 0 0; } }
     .custom-scroll::-webkit-scrollbar { width: 6px; }
     .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+    
+    /* PINES DEL MAPA Y ALERTAS TITILANTES */
     .custom-pin { background: transparent; border: none; }
     .pin-circle { width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5); }
-    /* Animación para el aviso de Tamper */
+    
     .blink-bg { animation: blinkingBackground 2s infinite; }
     @keyframes blinkingBackground { 0% { background-color: #fee2e2; } 50% { background-color: #fca5a5; } 100% { background-color: #fee2e2; } }
+
+    /* Efecto Radar para los pines con alertas */
+    @keyframes pin-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.9); }
+      70% { box-shadow: 0 0 0 12px rgba(220, 38, 38, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+    .pin-alert {
+      border: 2px solid #dc2626 !important;
+      animation: pin-pulse 1.2s infinite;
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-6">
@@ -64,7 +77,7 @@
     <!-- Pestañas -->
     <div class="flex mb-4 border-b border-gray-300 overflow-x-auto">
       <button onclick="switchTab('general')" id="tabGeneral" class="tab-active px-4 py-2 mr-4 transition whitespace-nowrap">Vista General</button>
-      <button onclick="switchTab('individual')" id="tabIndividual" class="text-gray-500 px-4 py-2 mr-4 transition hover:text-blue-500 whitespace-nowrap">Consulta Individual</button>
+      <button onclick="switchTab('individual')" id="tabIndividual" class="text-gray-500 px-4 py-2 mr-4 transition hover:text-blue-50 whitespace-nowrap">Consulta Individual</button>
       <button onclick="switchTab('radius')" id="tabRadius" class="text-gray-500 px-4 py-2 transition hover:text-blue-500 whitespace-nowrap">Búsqueda por Radio</button>
     </div>
 
@@ -277,6 +290,10 @@
             <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#3b82f6]"></div> Movistar (4G)</li>
             <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#22c55e]"></div> Movilnet (4G)</li>
             <li class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-[#8b5cf6]"></div> WIFI / Otro</li>
+            <li class="flex items-center gap-2 mt-2 pt-2 border-t border-gray-200">
+              <div class="w-3 h-3 rounded-full border-2 border-red-600 animate-pulse bg-transparent"></div> 
+              <span class="font-bold text-red-600">Alerta (Titilante)</span>
+            </li>
           </ul>
         </div>
       </div>
@@ -293,6 +310,7 @@
     let selectedDeps = new Set();
     let depMenuOpen = false, progressTimer = null; 
     let masterDateRef = new Date(0);
+
     let radiusMap = null, radiusCircle = null, markersLayer = null, currentCenter = null;
 
     function fmtNum(num) { return Number(num).toLocaleString('es-VE'); }
@@ -536,7 +554,6 @@
           if((!isNaN(bat) && bat < 20) || (prnt !== "ok" && prnt !== "normal" && prnt !== "")) hwAlerts++;
           if(!i.apps || i.apps === "" || i.apps.includes("(v?)")) swAlerts++;
           
-          // Contadores de incidencias
           if(i.tamperAlert === "Sí") casosTamper++;
           if(i.batHealthAlert && i.batHealthAlert !== "") casosBatHealth++;
         }
@@ -608,7 +625,7 @@
       let sB = Object.keys(bancCnt).sort((a,b) => bancCnt[b] - bancCnt[a]).slice(0, 5); 
       chartBancInst = new Chart(document.getElementById('chartBancos'), { type: 'bar', data: { labels: sB, datasets: [{ label: 'Terminales', data: sB.map(m => bancCnt[m]), backgroundColor: '#10b981' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
       chartProcInst = new Chart(document.getElementById('chartProc'), { type: 'doughnut', data: { labels: Object.keys(procCnt), datasets: [{ data: Object.values(procCnt), backgroundColor: ['#0ea5e9', '#f97316'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
-      chartNetInst = new Chart(document.getElementById('chartNet'), { type: 'doughnut', data: { labels: Object.keys(netCnt), datasets: [{ data: Object.values(netCnt), backgroundColor: ['#3b82f6', '#10b981', '#cbd5e1'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
+      chartNetInst = new Chart(document.getElementById('chartNet'), { type: 'doughnut', data: { labels: Object.keys(netCnt), datasets: [{ data: Object.values(netCnt), backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
       
       let opLabels = Object.keys(opCnt), opColors = opLabels.map(op => { if(op === 'Movistar') return '#3b82f6'; if(op === 'Digitel') return '#ef4444'; if(op === 'Movilnet') return '#22c55e'; return '#cbd5e1'; });
       chartOpInst = new Chart(document.getElementById('chartOperadoras'), { type: 'doughnut', data: { labels: opLabels, datasets: [{ data: Object.values(opCnt), backgroundColor: opColors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } });
@@ -625,21 +642,19 @@
       const t = rawData.find(i => (i.sn && i.sn.toLowerCase() === q));
       if(!t) { document.getElementById('searchError').style.display = 'block'; return; }
 
-      // Gestión de Alertas Críticas (Tamper / Batería)
       let alerts = [];
       if(t.tamperAlert === "Sí") alerts.push("Posible problema de Tamper detectado.");
       if(t.batHealthAlert && t.batHealthAlert !== "") alerts.push(`Problema de Batería reportado: ${t.batHealthAlert}`);
       
-      let incBox = document.getElementById('incidenciaAlertBox');
-      let incList = document.getElementById('incidenciaList');
+      let incBox = document.getElementById('incidenciaAlertBox'), incList = document.getElementById('incidenciaList');
       if(alerts.length > 0) {
-        incList.innerHTML = alerts.map(a => `<li>${a}</li>`).join("");
-        incBox.style.display = 'block';
+        incList.innerHTML = alerts.map(a => `<li>${a}</li>`).join(""); incBox.style.display = 'block';
       } else { incBox.style.display = 'none'; }
 
       document.getElementById('indProc').innerText = t.proc || 'N/A'; 
       document.getElementById('indMerchant').innerText = (t.clienteParque && t.clienteParque !== "") ? t.clienteParque : (t.merchant || 'N/A'); 
       document.getElementById('indTxStatus').innerHTML = fmtEstatusParque(t.diasSinTransar);
+
       document.getElementById('indDep').innerText = t.deployment || 'N/A'; document.getElementById('indProp').innerText = t.propiedad || 'N/A'; document.getElementById('indBanco').innerText = t.banco || 'N/A'; document.getElementById('indModel').innerText = t.model || 'N/A'; document.getElementById('indSN').innerText = t.sn || 'N/A'; document.getElementById('indStatus').innerText = t.status || 'N/A';
       
       let netOpStr = t.net || 'N/A'; if(t.net && t.net.toUpperCase().includes("4G") && t.operadora && t.operadora !== "Desconocido") netOpStr += ` (${t.operadora})`;
@@ -715,12 +730,21 @@
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
-    function getMarkerIcon(net, operadora) {
+    // AHORA EL MARCADOR RECIBE SI HAY UNA ALERTA PARA AÑADIR LA ANIMACIÓN
+    function getMarkerIcon(net, operadora, hasAlert) {
       let color = '#8b5cf6'; // VIOLETA para WIFI/Otro
       if(net && net.toUpperCase().includes("4G")) {
-        if(operadora === 'Movistar') color = '#3b82f6'; else if(operadora === 'Digitel') color = '#ef4444'; else if(operadora === 'Movilnet') color = '#22c55e'; 
+        if(operadora === 'Movistar') color = '#3b82f6'; 
+        else if(operadora === 'Digitel') color = '#ef4444'; 
+        else if(operadora === 'Movilnet') color = '#22c55e'; 
       }
-      return L.divIcon({ className: 'custom-pin', html: `<div class="pin-circle" style="background-color:${color};"></div>`, iconSize: [16, 16], iconAnchor: [8, 8] });
+      
+      let alertClass = hasAlert ? 'pin-alert' : '';
+      return L.divIcon({
+        className: 'custom-pin',
+        html: `<div class="pin-circle ${alertClass}" style="background-color:${color};"></div>`,
+        iconSize: [16, 16], iconAnchor: [8, 8]
+      });
     }
 
     function onRadiusPropChange() {
@@ -758,16 +782,22 @@
       let found = 0;
       rawData.forEach(t => {
         let ok = (fProp === "All" || t.propiedad === fProp) && (fBanc === "All" || t.banco === fBanc) && (fProc === "All" || t.proc === fProc) && (fNet === "All" || (t.net && t.net.toUpperCase().includes(fNet))) && (fOp === "All" || t.operadora === fOp) && (fMod === "All" || t.model === fMod);
+        
         if(ok && t.latNum && t.lngNum) {
           let dist = getDistanceInKm(currentCenter.lat, currentCenter.lng, t.latNum, t.lngNum);
           if(dist <= radiusKm) {
             found++;
-            let marker = L.marker([t.latNum, t.lngNum], { icon: getMarkerIcon(t.net, t.operadora) });
+            
+            // Verificamos si este equipo tiene alguna incidencia crítica
+            let hasAlert = (t.tamperAlert === "Sí" || (t.batHealthAlert && t.batHealthAlert !== ""));
+            
+            // Se le envía la variable hasAlert al marcador para aplicarle la animación si es verdadera
+            let marker = L.marker([t.latNum, t.lngNum], { icon: getMarkerIcon(t.net, t.operadora, hasAlert) });
+            
             let comercioNombre = (t.clienteParque && t.clienteParque !== "") ? t.clienteParque : (t.merchant || 'Comercio Desconocido');
             
-            // Etiqueta visual de alerta en el mapa
             let alertBanner = '';
-            if (t.tamperAlert === "Sí" || (t.batHealthAlert && t.batHealthAlert !== "")) {
+            if (hasAlert) {
                 let msgs = [];
                 if(t.tamperAlert === "Sí") msgs.push("TAMPER");
                 if(t.batHealthAlert) msgs.push(`BATERÍA: ${t.batHealthAlert}`);
