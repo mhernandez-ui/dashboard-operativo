@@ -28,7 +28,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col">
 
-  <!-- CONTENEDOR DE TOASTS (Notificaciones Flotantes) -->
+  <!-- CONTENEDOR DE TOASTS -->
   <div id="toastContainer" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- PANTALLA DE LOGIN -->
@@ -54,7 +54,6 @@
   <!-- APLICACIÓN PRINCIPAL -->
   <div id="appView" class="hidden flex-grow flex flex-col p-4 md:p-6 overflow-y-auto">
     
-    <!-- Pantalla de Carga Inicial -->
     <div id="loadingOverlay">
       <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
       <p class="font-bold text-gray-700">Cargando base de datos...</p>
@@ -175,11 +174,11 @@
       </div>
     </div>
 
-    <!-- VISTA 3: BÚSQUEDA POR RADIO -->
+    <!-- VISTA 3: BÚSQUEDA POR RADIO Y NACIONAL -->
     <div id="viewRadius" class="hidden pb-10">
       <div class="bg-white p-4 rounded shadow mb-4">
-        <h3 class="text-sm font-bold text-gray-700 uppercase mb-3 border-b pb-2">Filtros de Búsqueda</h3>
-        <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+        <h3 class="text-sm font-bold text-gray-700 uppercase mb-3 border-b pb-2">Filtros de Búsqueda para el Mapa</h3>
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-3 mb-3">
           <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-500 uppercase mb-1">Propiedad</label><select id="rFilterPropiedad" class="p-1 border rounded bg-blue-50 text-blue-800 text-xs" onchange="onRadiusPropChange()"><option value="All">Todas</option></select></div>
           <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-500 uppercase mb-1">Banco</label><select id="rFilterBanco" class="p-1 border rounded text-xs" onchange="updateRadiusSearch()"><option value="All">Todos</option></select></div>
           <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-500 uppercase mb-1">Procesadora</label><select id="rFilterProc" class="p-1 border rounded text-xs" onchange="updateRadiusSearch()"><option value="All">Todas</option><option value="Credicard">Credicard</option><option value="Platco">Platco</option></select></div>
@@ -187,7 +186,14 @@
           <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-500 uppercase mb-1">Operadora</label><select id="rFilterOperadora" class="p-1 border rounded text-xs bg-gray-100" onchange="updateRadiusSearch()" disabled><option value="All">Todas</option><option value="Movistar">Movistar</option><option value="Digitel">Digitel</option><option value="Movilnet">Movilnet</option></select></div>
           <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-500 uppercase mb-1">Modelo</label><select id="rFilterModel" class="p-1 border rounded text-xs" onchange="updateRadiusSearch()"><option value="All">Todos</option></select></div>
         </div>
+        
+        <!-- NUEVO: TOGGLE INCIDENCIAS A NIVEL NACIONAL -->
+        <div class="border-t pt-3 flex items-center gap-2">
+          <input type="checkbox" id="rFilterIncidenciasNacional" onchange="toggleIncidenciasNacional()" class="w-4 h-4 text-red-600 rounded cursor-pointer">
+          <label for="rFilterIncidenciasNacional" class="text-xs font-bold text-red-600 uppercase cursor-pointer">⚠️ Ver todas las incidencias a nivel nacional (Ignora el límite del radio)</label>
+        </div>
       </div>
+      
       <div class="bg-white p-4 rounded shadow mb-6 flex flex-col md:flex-row gap-4 items-end relative">
         <div class="w-full md:w-1/2 relative">
           <label class="text-xs font-bold text-gray-500 uppercase mb-1 block">Buscar lugar con Autocompletado</label>
@@ -200,15 +206,16 @@
         </div>
         <div class="w-full md:w-1/4"><button onclick="locateMe()" class="w-full bg-emerald-600 text-white px-4 py-2 rounded shadow hover:bg-emerald-700 flex items-center justify-center gap-2">📍 Mi Ubicación</button></div>
       </div>
+      
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div class="lg:col-span-3 bg-white p-2 rounded shadow">
           <div id="mapRadius" class="w-full h-[550px] bg-gray-200 rounded z-0"></div>
         </div>
         <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col h-full">
-          <h3 class="text-lg font-bold text-gray-700 mb-2 border-b pb-2">Resultados en Área</h3>
+          <h3 class="text-lg font-bold text-gray-700 mb-2 border-b pb-2">Resultados en Mapa</h3>
           <p class="text-xs text-gray-500 mb-4">Centro: <br><span id="centerText" class="font-bold text-blue-600">No definido</span></p>
           <div class="bg-blue-50 border border-blue-200 p-4 rounded text-center mb-6 shadow-sm">
-            <p class="text-xs text-blue-800 uppercase font-bold mb-1">Equipos Encontrados</p>
+            <p class="text-xs text-blue-800 uppercase font-bold mb-1">Equipos Mostrados</p>
             <p id="radiusCount" class="text-4xl font-bold text-blue-600">0</p>
           </div>
           <h4 class="font-bold text-xs text-gray-500 uppercase mb-2">Leyenda de Pines:</h4>
@@ -263,26 +270,18 @@
     // ⚠️ REEMPLAZA ESTA URL CON TU NUEVA API DE DESARROLLO
     const API_URL = 'https://script.google.com/macros/s/AKfycby2OLcBZFbZY3Y3IhGOiYSkvWnG0m3DqmEXnz70tQJLV6gQY_awFTLbuPPUDcozcNUh/exec';
 
-    let currentUser = null;
-    let rawData = [];
-    let chartsLoaded = false;
-    let masterDateRef = new Date(0);
+    let currentUser = null, rawData = [], chartsLoaded = false, masterDateRef = new Date(0);
     let chartPropInst, chartOpInst, chartModInst, chartNetInst, chartBancInst, chartProcInst;
-    let selectedDeps = new Set();
-    let depMenuOpen = false;
+    let selectedDeps = new Set(), depMenuOpen = false;
     let radiusMap = null, radiusCircle = null, markersLayer = null, currentCenter = null;
 
-    // --- MANEJO DE TOASTS (NOTIFICACIONES FLOTANTES) ---
     function showToast(msg, color="blue", duration=6000) {
-      let tc = document.getElementById('toastContainer');
-      let t = document.createElement('div');
+      let tc = document.getElementById('toastContainer'), t = document.createElement('div');
       t.className = `bg-${color}-100 border-l-4 border-${color}-500 text-${color}-800 p-3 rounded shadow-xl flex items-center justify-between pointer-events-auto text-sm font-semibold max-w-sm`;
       t.innerHTML = `<span>${msg}</span><button onclick="this.parentElement.remove()" class="ml-4 font-bold text-lg hover:text-${color}-900">&times;</button>`;
-      tc.appendChild(t);
-      if(duration > 0) setTimeout(() => { if(t.parentElement) t.remove(); }, duration);
+      tc.appendChild(t); if(duration > 0) setTimeout(() => { if(t.parentElement) t.remove(); }, duration);
     }
 
-    // --- SEGURIDAD Y LOGIN ---
     window.onload = function() {
       google.charts.load('current', { 'packages': ['geochart'] });
       google.charts.setOnLoadCallback(() => { chartsLoaded = true; checkSession(); });
@@ -299,7 +298,6 @@
       let u = document.getElementById('loginUser').value.trim(), p = document.getElementById('loginPass').value.trim();
       let err = document.getElementById('loginError'), btn = document.getElementById('loginBtn');
       if(!u || !p) { err.innerText = "Ingresa usuario y contraseña"; err.style.display = 'block'; return; }
-      
       btn.innerText = "Verificando..."; err.style.display = 'none'; btn.disabled = true;
       try {
         let res = await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify({action: 'login', username: u, password: p}) });
@@ -313,30 +311,17 @@
     function doLogout() { localStorage.removeItem('pos_session'); location.reload(); }
 
     function showApp() {
-      document.getElementById('loginView').style.display = 'none';
-      document.getElementById('appView').style.display = 'flex';
-      document.getElementById('userNameDisplay').innerText = currentUser.nombre;
-      document.getElementById('userRoleDisplay').innerText = currentUser.rol;
-      
-      // Control de Roles (RBAC)
+      document.getElementById('loginView').style.display = 'none'; document.getElementById('appView').style.display = 'flex';
+      document.getElementById('userNameDisplay').innerText = currentUser.nombre; document.getElementById('userRoleDisplay').innerText = currentUser.rol;
       if(currentUser.rol === 'Soporte') document.getElementById('btnConsolidate').style.display = 'none';
-      if(currentUser.rol === 'Maestro') document.getElementById('tabUsers').style.display = 'inline-block';
-      else document.getElementById('tabUsers').style.display = 'none';
-      
-      startDataStream(false); // Carga Inicial Silenciosa
+      if(currentUser.rol === 'Maestro') document.getElementById('tabUsers').style.display = 'inline-block'; else document.getElementById('tabUsers').style.display = 'none';
+      startDataStream(false);
     }
 
-    // --- CARGA DE DATOS Y CONSOLIDACIÓN EN SEGUNDO PLANO ---
     async function fetchWithRetry(url, retries = 3) {
       for (let i = 1; i <= retries; i++) {
-        try {
-          let response = await fetch(url, { redirect: 'follow' });
-          if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-          return await response.json();
-        } catch (error) {
-          if (i === retries) throw new Error("Conexión bloqueada por el navegador.");
-          await new Promise(res => setTimeout(res, 2000));
-        }
+        try { let response = await fetch(url, { redirect: 'follow' }); if (!response.ok) throw new Error(`HTTP Error: ${response.status}`); return await response.json(); } 
+        catch (error) { if (i === retries) throw new Error("Conexión bloqueada."); await new Promise(res => setTimeout(res, 2000)); }
       }
     }
 
@@ -344,19 +329,13 @@
       try {
         let targetUrl = `${API_URL}?action=read&t=${Date.now()}`;
         let result = await fetchWithRetry(targetUrl, 3);
-        
         if (!result.success && result.needsConsolidation) {
            document.getElementById('loadingOverlay').style.display = 'none';
-           if(currentUser.rol !== 'Soporte') {
-             showToast("La base de datos está vacía. Ejecutando primera consolidación...", "yellow");
-             startConsolidation();
-           } else { alert("La base de datos no ha sido inicializada. Contacta al administrador."); }
-           return;
+           if(currentUser.rol !== 'Soporte') { showToast("La base de datos está vacía. Ejecutando primera consolidación...", "yellow"); startConsolidation(); } 
+           else { alert("La base de datos no ha sido inicializada. Contacta al administrador."); } return;
         }
 
-        rawData = result.data || [];
-        masterDateRef = new Date(0); 
-
+        rawData = result.data || []; masterDateRef = new Date(0); 
         rawData.forEach(item => {
           item.estadoInfo = { name: "Desconocido", iso: null }; item.latNum = null; item.lngNum = null;
           if(item.loc) { let c = item.loc.replace(/"/g, "").split(","); if(c.length === 2) { item.latNum = parseFloat(c[0]); item.lngNum = parseFloat(c[1]); item.estadoInfo = getStateInfo(item.latNum, item.lngNum); } }
@@ -366,99 +345,54 @@
 
         document.getElementById('lastUpdateText').innerText = result.updatedAt ? `Última actualización: ${result.updatedAt}` : 'Conectado a la base local';
         document.getElementById('lblRefDate').innerText = `(Ref: ${masterDateRef.toLocaleDateString('es-VE')})`;
-        
-        populatePropiedadFilter(); applyFilters();
-        document.getElementById('loadingOverlay').style.display = 'none'; // Quitar pantalla de carga solo cuando todo termine
-      } catch (err) {
-        document.getElementById('loadingOverlay').style.display = 'none';
-        showToast("Error conectando con la base de datos local.", "red");
-      }
+        populatePropiedadFilter(); applyFilters(); document.getElementById('loadingOverlay').style.display = 'none'; 
+      } catch (err) { document.getElementById('loadingOverlay').style.display = 'none'; showToast("Error conectando con la base de datos local.", "red"); }
     }
 
-    // EL VERDADERO PROCESO EN SEGUNDO PLANO
     async function startConsolidation() {
-      document.getElementById('btnConsolidate').disabled = true;
-      document.getElementById('btnConsolidate').innerText = "Sincronizando...";
+      document.getElementById('btnConsolidate').disabled = true; document.getElementById('btnConsolidate').innerText = "Sincronizando...";
       showToast("🔄 Sincronizando con Google Drive en segundo plano. Puedes seguir usando el dashboard con normalidad.", "blue", 10000);
-      
       try {
         let targetUrl = `${API_URL}?action=consolidate&t=${Date.now()}`;
-        // Hacemos fetch sin bloquear la pantalla (No overlay)
-        let response = await fetch(targetUrl, { redirect: 'follow' });
-        let result = await response.json();
-        
-        if (result.success) {
-          showToast("✅ Consolidación exitosa. Refrescando pantalla...", "green");
-          startDataStream(false); // Refresca los datos en RAM
-        } else { showToast("❌ Error consolidando: " + result.error, "red"); }
+        let response = await fetch(targetUrl, { redirect: 'follow' }); let result = await response.json();
+        if (result.success) { showToast("✅ Consolidación exitosa. Refrescando pantalla...", "green"); startDataStream(false); } 
+        else { showToast("❌ Error consolidando: " + result.error, "red"); }
       } catch (e) { showToast("❌ Error de red durante la consolidación.", "red"); }
-      
-      document.getElementById('btnConsolidate').disabled = false;
-      document.getElementById('btnConsolidate').innerText = "Re-escanear y Consolidar";
+      document.getElementById('btnConsolidate').disabled = false; document.getElementById('btnConsolidate').innerText = "Re-escanear y Consolidar";
     }
 
-    // --- GESTIÓN DE USUARIOS (ADMIN) ---
     async function loadUsers() {
       if(currentUser.rol !== 'Maestro') return;
       try {
-        let res = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({action: 'getUsers'}) });
-        let result = await res.json();
+        let res = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({action: 'getUsers'}) }); let result = await res.json();
         if(result.success) {
           let tb = document.getElementById('userTableBody'); tb.innerHTML = '';
           result.data.forEach(u => {
-            let tr = document.createElement('tr'); tr.className = "border-b hover:bg-gray-50";
-            let statusColor = u.estatus === 'Activo' ? 'text-green-600' : 'text-red-600';
-            tr.innerHTML = `
-              <td class="p-3 font-bold text-gray-700">${u.username}</td><td class="p-3">${u.nombre}</td><td class="p-3"><span class="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded font-bold">${u.rol}</span></td><td class="p-3 font-bold ${statusColor}">${u.estatus}</td>
-              <td class="p-3"><button onclick="editUser('${u.username}', '${u.nombre}', '${u.rol}', '${u.estatus}')" class="text-blue-600 hover:underline text-xs mr-3">Editar</button><button onclick="deleteUser('${u.username}')" class="text-red-600 hover:underline text-xs">Eliminar</button></td>`;
-            tb.appendChild(tr);
+            let tr = document.createElement('tr'); tr.className = "border-b hover:bg-gray-50"; let statusColor = u.estatus === 'Activo' ? 'text-green-600' : 'text-red-600';
+            tr.innerHTML = `<td class="p-3 font-bold text-gray-700">${u.username}</td><td class="p-3">${u.nombre}</td><td class="p-3"><span class="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded font-bold">${u.rol}</span></td><td class="p-3 font-bold ${statusColor}">${u.estatus}</td>
+              <td class="p-3"><button onclick="editUser('${u.username}', '${u.nombre}', '${u.rol}', '${u.estatus}')" class="text-blue-600 hover:underline text-xs mr-3">Editar</button><button onclick="deleteUser('${u.username}')" class="text-red-600 hover:underline text-xs">Eliminar</button></td>`; tb.appendChild(tr);
           });
         }
       } catch(e) { showToast("Error cargando usuarios", "red"); }
     }
 
-    function openUserModal() {
-      document.getElementById('uOriginalName').value = ''; document.getElementById('uUser').value = ''; document.getElementById('uPass').value = ''; document.getElementById('uName').value = ''; document.getElementById('uRole').value = 'Soporte'; document.getElementById('uStatus').value = 'Activo';
-      document.getElementById('userModal').style.display = 'flex';
-    }
-
-    function editUser(u, n, r, s) {
-      document.getElementById('uOriginalName').value = u; document.getElementById('uUser').value = u; document.getElementById('uPass').value = ''; document.getElementById('uName').value = n; document.getElementById('uRole').value = r; document.getElementById('uStatus').value = s;
-      document.getElementById('userModal').style.display = 'flex';
-    }
-
+    function openUserModal() { document.getElementById('uOriginalName').value = ''; document.getElementById('uUser').value = ''; document.getElementById('uPass').value = ''; document.getElementById('uName').value = ''; document.getElementById('uRole').value = 'Soporte'; document.getElementById('uStatus').value = 'Activo'; document.getElementById('userModal').style.display = 'flex'; }
+    function editUser(u, n, r, s) { document.getElementById('uOriginalName').value = u; document.getElementById('uUser').value = u; document.getElementById('uPass').value = ''; document.getElementById('uName').value = n; document.getElementById('uRole').value = r; document.getElementById('uStatus').value = s; document.getElementById('userModal').style.display = 'flex'; }
     async function saveUser() {
-      let obj = {
-        username: document.getElementById('uUser').value.trim(), password: document.getElementById('uPass').value.trim(),
-        nombre: document.getElementById('uName').value.trim(), rol: document.getElementById('uRole').value, estatus: document.getElementById('uStatus').value
-      };
+      let obj = { username: document.getElementById('uUser').value.trim(), password: document.getElementById('uPass').value.trim(), nombre: document.getElementById('uName').value.trim(), rol: document.getElementById('uRole').value, estatus: document.getElementById('uStatus').value };
       if(!obj.username || !obj.nombre) return alert("Completa los campos obligatorios");
-      let original = document.getElementById('uOriginalName').value;
-      if(original && original !== obj.username) { alert("No puedes cambiar el Login. Crea un usuario nuevo."); return; }
-      
+      let original = document.getElementById('uOriginalName').value; if(original && original !== obj.username) { alert("No puedes cambiar el Login. Crea un usuario nuevo."); return; }
       document.getElementById('userModal').style.display = 'none'; showToast("Guardando credencial...", "blue");
-      try {
-        let res = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({action: 'saveUser', user: obj}) });
-        let result = await res.json();
-        if(result.success) { showToast("Usuario guardado exitosamente", "green"); loadUsers(); } else showToast("Error: " + result.error, "red");
-      } catch(e) { showToast("Error de conexión", "red"); }
+      try { let res = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({action: 'saveUser', user: obj}) }); let result = await res.json(); if(result.success) { showToast("Usuario guardado exitosamente", "green"); loadUsers(); } else showToast("Error: " + result.error, "red"); } catch(e) { showToast("Error de conexión", "red"); }
     }
-
     async function deleteUser(u) {
-      if(!confirm(`¿Estás seguro de eliminar el acceso a: ${u}?`)) return;
-      if(u === currentUser.username) { alert("No puedes eliminarte a ti mismo."); return; }
+      if(!confirm(`¿Estás seguro de eliminar el acceso a: ${u}?`)) return; if(u === currentUser.username) { alert("No puedes eliminarte a ti mismo."); return; }
       showToast("Eliminando...", "blue");
-      try {
-        let res = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({action: 'deleteUser', username: u}) });
-        let result = await res.json();
-        if(result.success) { showToast("Usuario eliminado", "green"); loadUsers(); } else showToast("Error: " + result.error, "red");
-      } catch(e) { showToast("Error de conexión", "red"); }
+      try { let res = await fetch(API_URL, { method: 'POST', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({action: 'deleteUser', username: u}) }); let result = await res.json(); if(result.success) { showToast("Usuario eliminado", "green"); loadUsers(); } else showToast("Error: " + result.error, "red"); } catch(e) { showToast("Error de conexión", "red"); }
     }
 
-    // --- RESTO DEL SISTEMA INTACTO (GeoChart, Leaflet, Chart.js) ---
     function fmtNum(num) { return Number(num).toLocaleString('es-VE'); }
     function fmtEstatusParque(dias) { if(dias === "" || dias === "N/A" || dias == null) return "Sin datos"; let num = parseInt(dias); if(!isNaN(num)) return num === 0 ? '<span class="text-green-600 font-bold">Transando (0 días)</span>' : `<span class="text-red-600 font-bold">${num} días sin transar</span>`; return dias; }
-    
     const bancosConocidos = ["BANESCO", "MERCANTIL", "PROVINCIAL", "VENEZUELA", "BANCARIBE", "CARONI", "TESORO", "BICENTENARIO", "PLAZA", "EXTERIOR", "ACTIVO", "BANCAMIGA", "BANCRECER", "BANPLUS", "BNC", "SOFITASA", "DEL SUR", "NACIONAL DE CREDITO"];
     const vzlaStates = [{ name: "Amazonas", iso: "VE-Z", lat: 3.5, lng: -66.0 }, { name: "Anzoátegui", iso: "VE-B", lat: 9.0, lng: -64.3 }, { name: "Apure", iso: "VE-C", lat: 7.1, lng: -68.8 }, { name: "Aragua", iso: "VE-D", lat: 10.0, lng: -67.4 }, { name: "Barinas", iso: "VE-E", lat: 8.0, lng: -69.8 }, { name: "Bolívar", iso: "VE-F", lat: 6.3, lng: -63.5 }, { name: "Carabobo", iso: "VE-G", lat: 10.2, lng: -67.9 }, { name: "Cojedes", iso: "VE-H", lat: 9.3, lng: -68.3 }, { name: "Delta Amacuro", iso: "VE-Y", lat: 8.5, lng: -61.5 }, { name: "Falcón", iso: "VE-I", lat: 11.0, lng: -69.6 }, { name: "Guárico", iso: "VE-J", lat: 8.8, lng: -66.2 }, { name: "Lara", iso: "VE-K", lat: 10.0, lng: -69.8 }, { name: "Mérida", iso: "VE-L", lat: 8.4, lng: -71.1 }, { name: "Miranda", iso: "VE-M", lat: 10.2, lng: -66.4 }, { name: "Monagas", iso: "VE-N", lat: 9.4, lng: -63.0 }, { name: "Nueva Esparta", iso: "VE-O", lat: 11.0, lng: -64.0 }, { name: "Portuguesa", iso: "VE-P", lat: 9.1, lng: -69.3 }, { name: "Sucre", iso: "VE-R", lat: 10.5, lng: -63.2 }, { name: "Táchira", iso: "VE-S", lat: 7.8, lng: -72.0 }, { name: "Trujillo", iso: "VE-T", lat: 9.3, lng: -70.5 }, { name: "Vargas", iso: "VE-X", lat: 10.6, lng: -66.9 }, { name: "Yaracuy", iso: "VE-U", lat: 10.3, lng: -68.7 }, { name: "Zulia", iso: "VE-V", lat: 9.9, lng: -72.2 }, { name: "Distrito Capital", iso: "VE-A", lat: 10.5, lng: -66.9 }];
     function getStateInfo(lat, lng) { if(isNaN(lat) || isNaN(lng)) return { name: "Desconocido", iso: null }; let minD = Infinity, st = { name: "Desconocido", iso: null }; for(let s of vzlaStates) { let d = Math.pow(lat - s.lat, 2) + Math.pow(lng - s.lng, 2); if(d < minD) { minD = d; st = { name: s.name, iso: s.iso }; } } return minD > 15 ? { name: "Fuera de Venezuela", iso: null } : st; }
@@ -553,21 +487,53 @@
     function getMarkerIcon(net, operadora, hasAlert) { let color = '#8b5cf6'; if(net && net.toUpperCase().includes("4G")) { if(operadora === 'Movistar') color = '#3b82f6'; else if(operadora === 'Digitel') color = '#ef4444'; else if(operadora === 'Movilnet') color = '#22c55e'; } let alertClass = hasAlert ? 'pin-alert' : ''; return L.divIcon({ className: 'custom-pin', html: `<div class="pin-circle ${alertClass}" style="background-color:${color};"></div>`, iconSize: [16, 16], iconAnchor: [8, 8] }); }
     function onRadiusPropChange() { let sProp = document.getElementById('rFilterPropiedad').value; let bSet = new Set(), mSet = new Set(); rawData.forEach(i => { if(sProp === "All" || i.propiedad === sProp) { if(i.banco && i.banco !== "Sin Banco Identificado") bSet.add(i.banco); if(i.model) mSet.add(i.model); } }); fillSelect('rFilterBanco', Array.from(bSet).sort(), "Banco"); fillSelect('rFilterModel', Array.from(mSet).sort(), "Modelo"); updateRadiusSearch(); }
     function handleRadiusNetChange() { let netS = document.getElementById('rFilterNet').value, opS = document.getElementById('rFilterOperadora'); if(netS && netS.toUpperCase().includes("4G")) { opS.disabled = false; opS.classList.remove("bg-gray-100"); } else { opS.value = "All"; opS.disabled = true; opS.classList.add("bg-gray-100"); } updateRadiusSearch(); }
+    
+    // Función para manejar el Switch Global de Incidencias
+    function toggleIncidenciasNacional() {
+      let isChecked = document.getElementById('rFilterIncidenciasNacional').checked;
+      if (isChecked) {
+        // Hacemos zoom out para mostrar a Venezuela completa
+        radiusMap.setView([7.5, -66.0], 6);
+      } else if (currentCenter) {
+        // Volvemos a la vista original del radio
+        radiusMap.setView([currentCenter.lat, currentCenter.lng], 14);
+      }
+      updateRadiusSearch();
+    }
+
     function setCenterAndSearch(lat, lng, label = null) { currentCenter = { lat: lat, lng: lng }; if(label) document.getElementById('centerText').innerText = label; else document.getElementById('centerText').innerText = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`; updateRadiusSearch(); }
 
     function updateRadiusSearch() {
-      if(!currentCenter) return; 
-      let radiusKm = parseFloat(document.getElementById('radiusSelect').value), fProp = document.getElementById('rFilterPropiedad').value, fBanc = document.getElementById('rFilterBanco').value, fProc = document.getElementById('rFilterProc').value, fNet = document.getElementById('rFilterNet').value, fOp = document.getElementById('rFilterOperadora').value, fMod = document.getElementById('rFilterModel').value;
-      markersLayer.clearLayers(); if(radiusCircle) radiusMap.removeLayer(radiusCircle);
-      radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, radius: radiusKm * 1000 }).addTo(radiusMap);
+      let showGlobalIncidences = document.getElementById('rFilterIncidenciasNacional').checked;
+      if(!currentCenter && !showGlobalIncidences) return; 
+
+      let radiusKm = parseFloat(document.getElementById('radiusSelect').value);
+      let fProp = document.getElementById('rFilterPropiedad').value, fBanc = document.getElementById('rFilterBanco').value, fProc = document.getElementById('rFilterProc').value, fNet = document.getElementById('rFilterNet').value, fOp = document.getElementById('rFilterOperadora').value, fMod = document.getElementById('rFilterModel').value;
+
+      markersLayer.clearLayers(); 
+      if(radiusCircle) { radiusMap.removeLayer(radiusCircle); radiusCircle = null; }
+
+      // Dibujamos el círculo si el usuario hizo clic en algún centro
+      if(currentCenter) {
+        radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, radius: radiusKm * 1000 }).addTo(radiusMap);
+      }
+
       let found = 0;
       rawData.forEach(t => {
         let ok = (fProp === "All" || t.propiedad === fProp) && (fBanc === "All" || t.banco === fBanc) && (fProc === "All" || t.proc === fProc) && (fNet === "All" || (t.net && t.net.toUpperCase().includes(fNet))) && (fOp === "All" || t.operadora === fOp) && (fMod === "All" || t.model === fMod);
+        
         if(ok && t.latNum && t.lngNum) {
-          let dist = getDistanceInKm(currentCenter.lat, currentCenter.lng, t.latNum, t.lngNum);
-          if(dist <= radiusKm) {
+          let hasAlert = (t.tamperAlert === "Sí" || (t.batHealthAlert && t.batHealthAlert !== ""));
+          let inRadius = false;
+
+          if(currentCenter) {
+            let dist = getDistanceInKm(currentCenter.lat, currentCenter.lng, t.latNum, t.lngNum);
+            if(dist <= radiusKm) inRadius = true;
+          }
+
+          // Inyectamos el equipo si está dentro del radio normal, O si el usuario activó la vista global y el equipo tiene una incidencia
+          if(inRadius || (showGlobalIncidences && hasAlert)) {
             found++;
-            let hasAlert = (t.tamperAlert === "Sí" || (t.batHealthAlert && t.batHealthAlert !== ""));
             let marker = L.marker([t.latNum, t.lngNum], { icon: getMarkerIcon(t.net, t.operadora, hasAlert) });
             let comercioNombre = (t.clienteParque && t.clienteParque !== "") ? t.clienteParque : (t.merchant || 'Comercio Desconocido'), alertBanner = '';
             if (hasAlert) { let msgs = []; if(t.tamperAlert === "Sí") msgs.push("TAMPER"); if(t.batHealthAlert) msgs.push(`BATERÍA: ${t.batHealthAlert}`); alertBanner = `<div class="bg-red-100 text-red-800 p-1 mb-2 rounded border border-red-300 font-bold text-[10px] uppercase text-center">⚠️ ${msgs.join(" | ")}</div>`; }
@@ -575,7 +541,8 @@
             marker.bindPopup(popupHtml); markersLayer.addLayer(marker);
           }
         }
-      }); document.getElementById('radiusCount').innerText = fmtNum(found);
+      }); 
+      document.getElementById('radiusCount').innerText = fmtNum(found);
     }
 
     function switchTab(t) {
