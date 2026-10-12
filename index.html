@@ -26,10 +26,8 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col">
 
-  <!-- TOASTS -->
   <div id="toastContainer" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- LOGIN -->
   <div id="loginView" class="hidden flex-grow flex items-center justify-center bg-gray-200">
     <div class="bg-white p-8 rounded shadow-lg w-full max-w-sm">
       <div class="text-center mb-6">
@@ -49,15 +47,12 @@
     </div>
   </div>
 
-  <!-- APLICACIÓN PRINCIPAL -->
   <div id="appView" class="hidden flex-grow flex flex-col p-4 md:p-6 overflow-y-auto">
-    
     <div id="loadingOverlay">
       <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
       <p class="font-bold text-gray-700">Cargando base de datos...</p>
     </div>
 
-    <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 bg-white p-4 rounded shadow border border-gray-200 gap-4 flex-shrink-0">
       <div>
         <h1 class="text-2xl font-bold text-gray-700">Gestión de Terminales</h1>
@@ -74,7 +69,6 @@
       </div>
     </div>
 
-    <!-- Pestañas -->
     <div class="flex mb-4 border-b border-gray-300 overflow-x-auto flex-shrink-0 custom-scroll">
       <button onclick="switchTab('general')" id="tabGeneral" class="tab-active px-4 py-2 mr-2 transition whitespace-nowrap">Vista General</button>
       <button onclick="switchTab('trends')" id="tabTrends" class="text-gray-500 px-4 py-2 mr-2 transition hover:text-blue-500 whitespace-nowrap">Tendencias de Red</button>
@@ -83,9 +77,7 @@
       <button onclick="switchTab('users')" id="tabUsers" class="hidden text-gray-500 px-4 py-2 transition hover:text-blue-500 whitespace-nowrap"><span class="text-purple-600 font-bold">Gestión de Usuarios</span></button>
     </div>
 
-    <!-- VISTA 1: DASHBOARD GENERAL -->
     <div id="viewGeneral" class="flex-grow pb-10">
-      <!-- Filtros -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         <div class="flex flex-col"><label class="text-xs font-bold text-gray-500 uppercase mb-1">Propiedad (Maestro)</label><select id="filterPropiedad" class="p-2 border border-blue-300 bg-blue-50 rounded text-blue-800 outline-none" onchange="onPropiedadChange()"><option value="All">Todas</option></select></div>
         <div class="flex flex-col"><label class="text-xs font-bold text-gray-500 uppercase mb-1">Entidad Bancaria</label><select id="filterBanco" class="p-2 border rounded outline-none" onchange="applyFilters()"><option value="All">Todos</option></select></div>
@@ -102,7 +94,6 @@
         </div>
       </div>
 
-      <!-- KPIs -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white p-3 rounded shadow border-l-4 border-blue-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Total Equipos</h3><p id="kpiTotal" class="text-xl font-bold">0</p></div>
         <div class="bg-white p-3 rounded shadow border-l-4 border-green-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Activos</h3><p id="kpiActive" class="text-xl font-bold text-green-600">0</p></div>
@@ -114,7 +105,6 @@
         <div class="bg-white p-3 rounded shadow border-l-4 border-purple-500"><h3 class="text-gray-500 text-[10px] font-bold uppercase">Alertas Software</h3><p id="kpiSoftware" class="text-xl font-bold text-purple-600">0</p></div>
       </div>
 
-      <!-- Gráficos -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Propiedad</h3><div class="w-full h-64"><canvas id="chartPropiedad"></canvas></div></div>
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Bancos</h3><div class="w-full h-64"><canvas id="chartBancos"></canvas></div></div>
@@ -124,7 +114,6 @@
         <div class="bg-white p-4 rounded shadow"><h3 class="text-xs font-bold text-gray-700 uppercase mb-2">Modelos</h3><div class="w-full h-64"><canvas id="chartModelos"></canvas></div></div>
       </div>
 
-      <!-- Tablas y Mapa GeoChart -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="col-span-1 md:col-span-2 bg-white p-4 rounded shadow"><h2 class="text-sm font-bold text-gray-700 uppercase mb-2">Densidad Geográfica</h2><div id="mapGeneral" class="w-full h-[400px] flex justify-center items-center"></div></div>
         <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col"><h2 class="text-sm font-bold text-gray-700 uppercase mb-2 border-b pb-2">Ranking por Estado</h2><div class="table-container flex-grow mb-4"><table class="w-full text-left text-sm"><tbody id="stateTableBody"></tbody></table></div>
@@ -134,39 +123,32 @@
       </div>
     </div>
 
-    <!-- NUEVA VISTA: TENDENCIAS DE CONECTIVIDAD -->
     <div id="viewTrends" class="hidden pb-10">
       <div class="bg-white p-4 rounded shadow mb-6">
         <div class="flex justify-between items-center border-b pb-3 mb-4">
           <h2 class="text-lg font-bold text-gray-800">Análisis Histórico de Conectividad</h2>
           <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-bold">Relacionado a Filtros Globales</span>
         </div>
-        
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <!-- Curva 24 Horas -->
           <div class="border rounded p-4 bg-gray-50 shadow-sm">
             <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Conexiones Activas (Últimas 24 Horas)</h3>
             <p class="text-[10px] text-gray-400 mb-2 leading-tight">Muestra el volumen de equipos que reportaron comunicación en cada hora exacta.</p>
             <div class="w-full h-64"><canvas id="chartTrends24h"></canvas></div>
           </div>
-          <!-- Histórico 30 Días -->
           <div class="border rounded p-4 bg-gray-50 shadow-sm">
             <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Volumen de Conexión (Últimos 30 Días)</h3>
             <p class="text-[10px] text-gray-400 mb-2 leading-tight">Mide la salud general diaria del parque indicando la cantidad de equipos en línea por día.</p>
             <div class="w-full h-64"><canvas id="chartTrends30d"></canvas></div>
           </div>
         </div>
-
-        <!-- Supervivencia por Red -->
         <div class="border rounded p-4 bg-gray-50 shadow-sm">
           <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Comportamiento por Red / Operadora (Últimos 30 Días)</h3>
-          <p class="text-[10px] text-gray-400 mb-2 leading-tight">Compara la estabilidad de las señales 4G (Digitel, Movistar, Movilnet) frente a redes WIFI a lo largo del mes.</p>
+          <p class="text-[10px] text-gray-400 mb-2 leading-tight">Compara la estabilidad de las señales 4G frente a redes WIFI a lo largo del mes.</p>
           <div class="w-full h-72"><canvas id="chartTrendsNet"></canvas></div>
         </div>
       </div>
     </div>
 
-    <!-- VISTA 2: CONSULTA INDIVIDUAL -->
     <div id="viewIndividual" class="hidden pb-10">
       <div class="bg-white p-6 rounded shadow mb-6">
         <h2 class="text-lg font-bold mb-4">Buscar Terminal</h2>
@@ -205,7 +187,6 @@
       </div>
     </div>
 
-    <!-- VISTA 3: BÚSQUEDA POR RADIO Y NACIONAL -->
     <div id="viewRadius" class="hidden pb-10">
       <div class="bg-white p-4 rounded shadow mb-4">
         <h3 class="text-sm font-bold text-gray-700 uppercase mb-3 border-b pb-2">Filtros de Búsqueda para el Mapa</h3>
@@ -217,7 +198,6 @@
           <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-500 uppercase mb-1">Operadora</label><select id="rFilterOperadora" class="p-1 border rounded text-xs bg-gray-100" onchange="updateRadiusSearch()" disabled><option value="All">Todas</option><option value="Movistar">Movistar</option><option value="Digitel">Digitel</option><option value="Movilnet">Movilnet</option></select></div>
           <div class="flex flex-col"><label class="text-[10px] font-bold text-gray-500 uppercase mb-1">Modelo</label><select id="rFilterModel" class="p-1 border rounded text-xs" onchange="updateRadiusSearch()"><option value="All">Todos</option></select></div>
         </div>
-        
         <div class="border-t pt-3 flex items-center gap-2">
           <input type="checkbox" id="rFilterIncidenciasNacional" onchange="toggleIncidenciasNacional()" class="w-4 h-4 text-red-600 rounded cursor-pointer">
           <label for="rFilterIncidenciasNacional" class="text-xs font-bold text-red-600 uppercase cursor-pointer">⚠️ Ver todas las incidencias a nivel nacional (Ignora límite de radio)</label>
@@ -238,9 +218,7 @@
       </div>
       
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div class="lg:col-span-3 bg-white p-2 rounded shadow">
-          <div id="mapRadius" class="w-full h-[550px] bg-gray-200 rounded z-0"></div>
-        </div>
+        <div class="lg:col-span-3 bg-white p-2 rounded shadow"><div id="mapRadius" class="w-full h-[550px] bg-gray-200 rounded z-0"></div></div>
         <div class="col-span-1 bg-white p-4 rounded shadow flex flex-col h-full">
           <h3 class="text-lg font-bold text-gray-700 mb-2 border-b pb-2">Resultados en Mapa</h3>
           <p class="text-xs text-gray-500 mb-4">Centro: <br><span id="centerText" class="font-bold text-blue-600">No definido</span></p>
@@ -260,7 +238,6 @@
       </div>
     </div>
 
-    <!-- VISTA 4: GESTIÓN DE USUARIOS -->
     <div id="viewUsers" class="hidden pb-10">
       <div class="bg-white p-6 rounded shadow mb-6 border-t-4 border-purple-600">
         <div class="flex justify-between items-center mb-4">
@@ -277,7 +254,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE USUARIO -->
   <div id="userModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
     <div class="bg-white p-6 rounded shadow-xl w-full max-w-md">
       <h3 class="text-lg font-bold mb-4 border-b pb-2">Gestión de Credencial</h3>
@@ -300,7 +276,8 @@
     // ⚠️ REEMPLAZA ESTA URL CON TU NUEVA API DE DESARROLLO
     const API_URL = 'https://script.google.com/macros/s/AKfycby2OLcBZFbZY3Y3IhGOiYSkvWnG0m3DqmEXnz70tQJLV6gQY_awFTLbuPPUDcozcNUh/exec';
 
-    let currentUser = null, rawData = [], chartsLoaded = false, masterDateRef = new Date(0);
+    let currentUser = null, rawData = [], filteredData = [], chartsLoaded = false, masterDateRef = new Date(0);
+    let currentTab = 'general', trendsNeedUpdate = false;
     let chartPropInst, chartOpInst, chartModInst, chartNetInst, chartBancInst, chartProcInst;
     let chartTrends24hInst, chartTrends30dInst, chartTrendsNetInst;
     let selectedDeps = new Set(), depMenuOpen = false;
@@ -367,11 +344,20 @@
         }
 
         rawData = result.data || []; masterDateRef = new Date(0); 
+        
+        // OPTIMIZACIÓN EXTREMA: Preprocesamiento de fechas una sola vez.
         rawData.forEach(item => {
           item.estadoInfo = { name: "Desconocido", iso: null }; item.latNum = null; item.lngNum = null;
           if(item.loc) { let c = item.loc.replace(/"/g, "").split(","); if(c.length === 2) { item.latNum = parseFloat(c[0]); item.lngNum = parseFloat(c[1]); item.estadoInfo = getStateInfo(item.latNum, item.lngNum); } }
           item.propiedad = extractOwnership(item.deployment); item.banco = extractBank(item.deployment);
-          if(item.online) { let dDate = new Date(item.online); if(dDate > masterDateRef && dDate <= new Date()) masterDateRef = dDate; }
+          if(item.online) { 
+             let dDate = new Date(item.online); 
+             item.onlineTime = dDate.getTime();
+             item.onlineDateString = dDate.toDateString();
+             item.onlineDateKey = dDate.toLocaleDateString('es-VE', {day:'2-digit', month:'short'});
+             item.onlineHourKey = dDate.getHours() + ':00';
+             if(dDate > masterDateRef && dDate <= new Date()) masterDateRef = dDate; 
+          }
         });
 
         document.getElementById('lastUpdateText').innerText = result.updatedAt ? `Última actualización: ${result.updatedAt}` : 'Conectado a la base local';
@@ -441,19 +427,34 @@
     function applyFilters() {
       const fProp = document.getElementById('filterPropiedad').value, fBanc = document.getElementById('filterBanco').value, fProc = document.getElementById('filterProc').value, fStat = document.getElementById('filterStatus').value, fNet = document.getElementById('filterNet').value, fOp = document.getElementById('filterOperadora').value, fMod = document.getElementById('filterModel').value, fState = document.getElementById('filterState').value;
       let activosHoy = 0, inactivos30 = 0, hwAlerts = 0, swAlerts = 0, casosTamper = 0, casosBatHealth = 0;
-      let filtered = rawData.filter(i => {
+      
+      let masterTime = masterDateRef.getTime();
+      let masterDateString = masterDateRef.toDateString();
+
+      filteredData = rawData.filter(i => {
         let ok = (fProp === "All" || i.propiedad === fProp) && (fBanc === "All" || i.banco === fBanc) && (fProc === "All" || i.proc === fProc) && (fStat === "All" || i.status === fStat) && (fNet === "All" || (i.net && i.net.toUpperCase().includes(fNet))) && (fOp === "All" || i.operadora === fOp) && (fMod === "All" || i.model === fMod) && (fState === "All" || i.estadoInfo.name === fState) && (selectedDeps.size === 0 || selectedDeps.has(i.deployment));
         if (ok) {
-          if(i.online) { let dDate = new Date(i.online); if(dDate.toDateString() === masterDateRef.toDateString()) activosHoy++; if(((masterDateRef - dDate) / (1000 * 3600 * 24)) > 30) inactivos30++; } else { inactivos30++; }
+          // OPTIMIZACIÓN: Solo validamos con variables enteras o strings pre-procesados, sin instanciar 'new Date()'
+          if(i.onlineTime) { 
+            if(i.onlineDateString === masterDateString) activosHoy++; 
+            if(((masterTime - i.onlineTime) / 86400000) > 30) inactivos30++; 
+          } else { inactivos30++; }
+          
           let bat = parseInt(i.bat), prnt = i.printer ? i.printer.toLowerCase() : "ok"; if((!isNaN(bat) && bat < 20) || (prnt !== "ok" && prnt !== "normal" && prnt !== "")) hwAlerts++; if(!i.apps || i.apps === "" || i.apps.includes("(v?)")) swAlerts++;
           if(i.tamperAlert === "Sí") casosTamper++; if(i.batHealthAlert && i.batHealthAlert !== "") casosBatHealth++;
         } return ok;
       });
-      document.getElementById('kpiTotal').innerText = fmtNum(filtered.length); document.getElementById('kpiActive').innerText = fmtNum(filtered.filter(d => d.status === "Activated").length); document.getElementById('kpiOnline').innerText = fmtNum(activosHoy); document.getElementById('kpiInactive30').innerText = fmtNum(inactivos30); document.getElementById('kpiTamper').innerText = fmtNum(casosTamper); document.getElementById('kpiBatHealth').innerText = fmtNum(casosBatHealth); document.getElementById('kpiHardware').innerText = fmtNum(hwAlerts); document.getElementById('kpiSoftware').innerText = fmtNum(swAlerts);
+      document.getElementById('kpiTotal').innerText = fmtNum(filteredData.length); document.getElementById('kpiActive').innerText = fmtNum(filteredData.filter(d => d.status === "Activated").length); document.getElementById('kpiOnline').innerText = fmtNum(activosHoy); document.getElementById('kpiInactive30').innerText = fmtNum(inactivos30); document.getElementById('kpiTamper').innerText = fmtNum(casosTamper); document.getElementById('kpiBatHealth').innerText = fmtNum(casosBatHealth); document.getElementById('kpiHardware').innerText = fmtNum(hwAlerts); document.getElementById('kpiSoftware').innerText = fmtNum(swAlerts);
       
-      drawTablesAndGeoChart(filtered); 
-      updateInteractiveCharts(filtered);
-      updateTrendsCharts(filtered); // Actualiza Módulo Tendencias
+      drawTablesAndGeoChart(filteredData); 
+      updateInteractiveCharts(filteredData);
+      
+      // RENDERIZADO PEREZOSO (LAZY LOADING)
+      trendsNeedUpdate = true;
+      if (currentTab === 'trends') {
+        updateTrendsCharts(filteredData);
+        trendsNeedUpdate = false;
+      }
     }
 
     function drawTablesAndGeoChart(data) {
@@ -471,19 +472,16 @@
       chartPropInst = new Chart(document.getElementById('chartPropiedad'), { type: 'pie', data: { labels: Object.keys(propCnt), datasets: [{ data: Object.values(propCnt), backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } }); let sB = Object.keys(bancCnt).sort((a,b) => bancCnt[b] - bancCnt[a]).slice(0, 5); chartBancInst = new Chart(document.getElementById('chartBancos'), { type: 'bar', data: { labels: sB, datasets: [{ label: 'Terminales', data: sB.map(m => bancCnt[m]), backgroundColor: '#10b981' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); chartProcInst = new Chart(document.getElementById('chartProc'), { type: 'doughnut', data: { labels: Object.keys(procCnt), datasets: [{ data: Object.values(procCnt), backgroundColor: ['#0ea5e9', '#f97316'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } }); chartNetInst = new Chart(document.getElementById('chartNet'), { type: 'doughnut', data: { labels: Object.keys(netCnt), datasets: [{ data: Object.values(netCnt), backgroundColor: ['#3b82f6', '#10b981', '#8b5cf6'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } }); let opLabels = Object.keys(opCnt), opColors = opLabels.map(op => { if(op === 'Movistar') return '#3b82f6'; if(op === 'Digitel') return '#ef4444'; if(op === 'Movilnet') return '#22c55e'; return '#cbd5e1'; }); chartOpInst = new Chart(document.getElementById('chartOperadoras'), { type: 'doughnut', data: { labels: opLabels, datasets: [{ data: Object.values(opCnt), backgroundColor: opColors }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } } }); let sM = Object.keys(modCnt).sort((a,b) => modCnt[b] - modCnt[a]).slice(0, 5); chartModInst = new Chart(document.getElementById('chartModelos'), { type: 'bar', data: { labels: sM, datasets: [{ label: 'Terminales', data: sM.map(m => modCnt[m]), backgroundColor: '#6366f1' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
     }
 
-    // --- NUEVO MÓDULO: TENDENCIAS ---
     function updateTrendsCharts(data) {
       if(data.length === 0) return;
       let daysMap = new Map(), hoursMap = new Map();
       let nowTime = masterDateRef.getTime();
 
-      // Inicializar últimos 30 días
       for(let i=29; i>=0; i--) {
         let d = new Date(nowTime - i*24*3600*1000);
         let k = d.toLocaleDateString('es-VE', {day:'2-digit', month:'short'});
         daysMap.set(k, { total: 0, Digitel: 0, Movistar: 0, Movilnet: 0, WIFI: 0 });
       }
-      // Inicializar últimas 24 horas
       for(let i=23; i>=0; i--) {
         let d = new Date(nowTime - i*3600*1000);
         let k = d.getHours() + ':00';
@@ -491,51 +489,30 @@
       }
 
       data.forEach(t => {
-        if(t.online) {
-          let d = new Date(t.online); let dTime = d.getTime();
-          let dKey = d.toLocaleDateString('es-VE', {day:'2-digit', month:'short'});
-          
-          if(daysMap.has(dKey)) {
-             let obj = daysMap.get(dKey); obj.total++;
+        // OPTIMIZACIÓN: Se usa la variable en caché t.onlineDateKey en vez de calcular la fecha en tiempo real
+        if(t.onlineTime) {
+          if(daysMap.has(t.onlineDateKey)) {
+             let obj = daysMap.get(t.onlineDateKey); obj.total++;
              let n = 'WIFI';
              if(t.net && t.net.toUpperCase().includes('4G')) { if(t.operadora === 'Digitel') n = 'Digitel'; else if(t.operadora === 'Movistar') n = 'Movistar'; else if(t.operadora === 'Movilnet') n = 'Movilnet'; }
              if(obj[n] !== undefined) obj[n]++;
           }
-          if(nowTime - dTime <= 24*3600*1000) {
-             let hKey = d.getHours() + ':00';
-             if(hoursMap.has(hKey)) hoursMap.set(hKey, hoursMap.get(hKey) + 1);
+          if(nowTime - t.onlineTime <= 24*3600*1000) {
+             if(hoursMap.has(t.onlineHourKey)) hoursMap.set(t.onlineHourKey, hoursMap.get(t.onlineHourKey) + 1);
           }
         }
       });
 
       if(chartTrends24hInst) chartTrends24hInst.destroy();
-      chartTrends24hInst = new Chart(document.getElementById('chartTrends24h'), {
-        type: 'line',
-        data: { labels: Array.from(hoursMap.keys()), datasets: [{ label: 'Conexiones', data: Array.from(hoursMap.values()), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, tension: 0.3, pointRadius: 2 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-      });
+      chartTrends24hInst = new Chart(document.getElementById('chartTrends24h'), { type: 'line', data: { labels: Array.from(hoursMap.keys()), datasets: [{ label: 'Conexiones', data: Array.from(hoursMap.values()), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, tension: 0.3, pointRadius: 2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
 
-      let daysLabels = Array.from(daysMap.keys());
-      let daysTotals = daysLabels.map(k => daysMap.get(k).total);
+      let daysLabels = Array.from(daysMap.keys()), daysTotals = daysLabels.map(k => daysMap.get(k).total);
       if(chartTrends30dInst) chartTrends30dInst.destroy();
-      chartTrends30dInst = new Chart(document.getElementById('chartTrends30d'), {
-        type: 'bar',
-        data: { labels: daysLabels, datasets: [{ label: 'Conexiones Diarias', data: daysTotals, backgroundColor: '#10b981' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-      });
+      chartTrends30dInst = new Chart(document.getElementById('chartTrends30d'), { type: 'bar', data: { labels: daysLabels, datasets: [{ label: 'Conexiones Diarias', data: daysTotals, backgroundColor: '#10b981' }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } } });
 
       let digData = daysLabels.map(k => daysMap.get(k).Digitel), movData = daysLabels.map(k => daysMap.get(k).Movistar), netData = daysLabels.map(k => daysMap.get(k).Movilnet), wifiData = daysLabels.map(k => daysMap.get(k).WIFI);
       if(chartTrendsNetInst) chartTrendsNetInst.destroy();
-      chartTrendsNetInst = new Chart(document.getElementById('chartTrendsNet'), {
-        type: 'line',
-        data: { labels: daysLabels, datasets: [
-          { label: 'Digitel', data: digData, borderColor: '#ef4444', tension: 0.2 },
-          { label: 'Movistar', data: movData, borderColor: '#3b82f6', tension: 0.2 },
-          { label: 'Movilnet', data: netData, borderColor: '#22c55e', tension: 0.2 },
-          { label: 'WIFI', data: wifiData, borderColor: '#8b5cf6', tension: 0.2, borderDash: [5, 5] }
-        ]},
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
-      });
+      chartTrendsNetInst = new Chart(document.getElementById('chartTrendsNet'), { type: 'line', data: { labels: daysLabels, datasets: [ { label: 'Digitel', data: digData, borderColor: '#ef4444', tension: 0.2 }, { label: 'Movistar', data: movData, borderColor: '#3b82f6', tension: 0.2 }, { label: 'Movilnet', data: netData, borderColor: '#22c55e', tension: 0.2 }, { label: 'WIFI', data: wifiData, borderColor: '#8b5cf6', tension: 0.2, borderDash: [5, 5] } ]}, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } } });
     }
 
     function searchTerminal() {
@@ -606,7 +583,6 @@
 
       markersLayer.clearLayers(); 
       if(radiusCircle) { radiusMap.removeLayer(radiusCircle); radiusCircle = null; }
-
       if(currentCenter) { radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, radius: radiusKm * 1000 }).addTo(radiusMap); }
 
       let found = 0;
@@ -631,6 +607,7 @@
     }
 
     function switchTab(t) {
+      currentTab = t;
       document.getElementById('viewGeneral').style.display = t === 'general' ? 'block' : 'none';
       document.getElementById('viewTrends').style.display = t === 'trends' ? 'block' : 'none';
       document.getElementById('viewIndividual').style.display = t === 'individual' ? 'block' : 'none';
@@ -645,6 +622,12 @@
       
       if(t === 'radius' && rawData.length > 0) initRadiusMap();
       if(t === 'users') loadUsers();
+      
+      // Si entramos a Tendencias y la bandera de actualización está activa, graficamos
+      if(t === 'trends' && trendsNeedUpdate) {
+        updateTrendsCharts(filteredData);
+        trendsNeedUpdate = false;
+      }
     }
   </script>
 </body>
